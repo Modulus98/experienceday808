@@ -589,9 +589,21 @@ html, body { overscroll-behavior:none; }
     if(type==="tick"){tone(900,.03,"square",.02)}
   }
   function musicStart(){
-    musicStop();if(!musicOn)return;initAudio();
-    const notes=[262,330,392,523,392,330,294,349];
-    musicTimer=setInterval(()=>{if(!musicOn||!G.running)return;tone(notes[beat%notes.length],.16,"triangle",.018);beat++},260);
+    musicStop(); if(!musicOn) return; initAudio(); if(!audioCtx) return;
+    const STEP=0.25;                                  /* 16 steps = one 4s bar */
+    const BASS=[65.4,65.4,87.3,98.0, 82.4,82.4,73.4,65.4];      /* C2 C2 F2 G2 / E2 E2 D2 C2 */
+    const LEAD=[523,659,784,659, 587,523,440,494, 523,659,880,784, 659,587,523,392];
+    const bar=()=>{
+      if(!musicOn) return;
+      for(let i=0;i<8;i++) tone(BASS[(beat*8+i)%BASS.length], .34, "triangle", .030, i*STEP*2);
+      for(let i=0;i<16;i++){
+        if(i%2===0 || i%8===3) tone(LEAD[(beat*16+i)%LEAD.length], .17, "triangle", .019, i*STEP);
+      }
+      for(let i=1;i<16;i+=4) tone(2400, .02, "square", .007, i*STEP);
+      beat++;
+    };
+    bar();
+    musicTimer=setInterval(bar, 3980);
   }
   function musicStop(){clearInterval(musicTimer);musicTimer=null}
 
@@ -1047,10 +1059,25 @@ html, body { overscroll-behavior:none; }
   document.getElementById("startCpuBtn").onclick=()=>startGame(true);
   document.getElementById("againBtn").onclick=()=>{endScreen.classList.add("hidden");instructionScreen.classList.remove("hidden")};
   document.getElementById("reviewBtn").onclick=()=>{endScreen.classList.add("hidden");review()};
-  document.getElementById("musicBtn").onclick=function(){musicOn=!musicOn;this.textContent=musicOn?"♫":"♩";if(musicOn&&G.running)musicStart();else musicStop()};
+  document.getElementById("musicBtn").onclick = () => {
+    musicOn=!musicOn; document.getElementById("musicBtn").textContent = musicOn?"\u266b":"\u2669";
+    try{localStorage.setItem("soimMusic",musicOn?"on":"off")}catch(e){}
+    if(musicOn){initAudio();musicStart()}else musicStop();
+  };
   document.getElementById("soundBtn").onclick=function(){soundOn=!soundOn;this.textContent=soundOn?"🔊":"🔇"};
   document.getElementById("fullBtn").onclick=()=>{if(!document.fullscreenElement)document.documentElement.requestFullscreen?.();else document.exitFullscreen?.()};
   pauseTime();
+
+  /* ---- background music: starts on first tap, remembered across the whole workshop ---- */
+  try{ if(localStorage.getItem("soimMusic")==="off") musicOn=false; }catch(e){}
+  (function(){
+    const btn=document.getElementById("musicBtn");
+    if(btn) btn.textContent = musicOn ? "\u266b" : "\u2669";
+    const kick=()=>{ initAudio(); if(musicOn) musicStart();
+      window.removeEventListener("pointerdown",kick); window.removeEventListener("keydown",kick); };
+    window.addEventListener("pointerdown",kick); window.addEventListener("keydown",kick);
+    setInterval(()=>{ if(musicOn && !musicTimer && audioCtx) musicStart(); }, 1500);
+  })();
 })();
 </script>
 </body>

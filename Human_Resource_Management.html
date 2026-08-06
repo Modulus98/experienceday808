@@ -646,9 +646,21 @@ html, body { overscroll-behavior:none; }
     notes.forEach((n,i)=>tone(n, i===notes.length-1?.35:.14, "triangle", .08, i*.14));
   }
   function musicStart(){
-    musicStop(); if(!musicOn) return; initAudio();
-    const notes=[392,440,523,587,523,440,392,349];
-    musicTimer=setInterval(()=>{ if(!running||!musicOn) return; tone(notes[beat%notes.length],.15,"triangle",.016); beat++; }, 280);
+    musicStop(); if(!musicOn) return; initAudio(); if(!audioCtx) return;
+    const STEP=0.25;                                  /* 16 steps = one 4s bar */
+    const BASS=[65.4,65.4,87.3,98.0, 82.4,82.4,73.4,65.4];      /* C2 C2 F2 G2 / E2 E2 D2 C2 */
+    const LEAD=[523,659,784,659, 587,523,440,494, 523,659,880,784, 659,587,523,392];
+    const bar=()=>{
+      if(!musicOn) return;
+      for(let i=0;i<8;i++) tone(BASS[(beat*8+i)%BASS.length], .34, "triangle", .030, i*STEP*2);
+      for(let i=0;i<16;i++){
+        if(i%2===0 || i%8===3) tone(LEAD[(beat*16+i)%LEAD.length], .17, "triangle", .019, i*STEP);
+      }
+      for(let i=1;i<16;i+=4) tone(2400, .02, "square", .007, i*STEP);
+      beat++;
+    };
+    bar();
+    musicTimer=setInterval(bar, 3980);
   }
   function musicStop(){ clearInterval(musicTimer); musicTimer=null; }
 
@@ -838,8 +850,9 @@ html, body { overscroll-behavior:none; }
   document.getElementById("startBtn").onclick = startGame;
   document.getElementById("againBtn").onclick = startGame;
   document.getElementById("musicBtn").onclick = () => {
-    musicOn=!musicOn; document.getElementById("musicBtn").textContent = musicOn?"♫":"♩";
-    if(musicOn && running) musicStart(); else musicStop();
+    musicOn=!musicOn; document.getElementById("musicBtn").textContent = musicOn?"\u266b":"\u2669";
+    try{localStorage.setItem("soimMusic",musicOn?"on":"off")}catch(e){}
+    if(musicOn){initAudio();musicStart()}else musicStop();
   };
   document.getElementById("soundBtn").onclick = () => {
     soundOn=!soundOn; document.getElementById("soundBtn").textContent = soundOn?"🔊":"🔇";
@@ -850,6 +863,17 @@ html, body { overscroll-behavior:none; }
   };
 
   updateHud(); updateTimerDisplay();
+
+  /* ---- background music: starts on first tap, remembered across the whole workshop ---- */
+  try{ if(localStorage.getItem("soimMusic")==="off") musicOn=false; }catch(e){}
+  (function(){
+    const btn=document.getElementById("musicBtn");
+    if(btn) btn.textContent = musicOn ? "\u266b" : "\u2669";
+    const kick=()=>{ initAudio(); if(musicOn) musicStart();
+      window.removeEventListener("pointerdown",kick); window.removeEventListener("keydown",kick); };
+    window.addEventListener("pointerdown",kick); window.addEventListener("keydown",kick);
+    setInterval(()=>{ if(musicOn && !musicTimer && audioCtx) musicStart(); }, 1500);
+  })();
 })();
 </script>
 </body>

@@ -283,6 +283,11 @@ table.gt tr.tot td { border-top:2px solid var(--yellow); border-bottom:0; font-w
 .facil h3 { margin:0 0 6px; color:var(--yellow); font-size:17px; }
 .facil ol { margin:0; padding-left:20px; font-size:14.5px; line-height:1.55; color:#cfe0f6; }
 .facil li { margin:5px 0; }
+.facil .docs { display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; }
+.facil .docs a { flex:1 1 200px; text-align:center; text-decoration:none; color:#2a1c00; font-weight:1000; font-size:15px;
+  background:var(--yellow); border:3px solid var(--ink); border-radius:16px; padding:11px 14px; box-shadow:0 5px 0 #020b1b; }
+.facil .docs a:hover { background:#ffe06a; }
+.facil .docs a small { display:block; font-weight:normal; font-size:12px; color:#4a3a10; }
 @media(max-width:640px){
   .hero { padding:14px; border-width:4px; }
   .station .head .who b { font-size:20px; } .station .head .icon { font-size:38px; }
@@ -427,6 +432,10 @@ html, body { overscroll-behavior:none; }
         <li>The 🏠 button at the top of every game brings you straight back to this page.</li>
         <li>Ask the closing question at each station: <i>which of these four jobs would you actually want to do?</i></li>
       </ol>
+      <div class="docs">
+        <a href="user-guide.html">📖 USER GUIDE<small>How to play all four stations · printable</small></a>
+        <a href="debrief-slides.html">🎬 DEBRIEF SLIDES<small>12 slides for the closing discussion</small></a>
+      </div>
     </div>
 
   </div></main>
@@ -453,9 +462,21 @@ html, body { overscroll-behavior:none; }
     if(type==="ok"){tone(560,.07,"triangle",.07);tone(820,.10,"triangle",.06,.06)}
   }
   function musicStart(){
-    musicStop();if(!musicOn)return;initAudio();
-    const notes=[262,330,392,523,392,330,294,349];
-    musicTimer=setInterval(()=>{if(!musicOn)return;tone(notes[beat%notes.length],.16,"triangle",.018);beat++},260);
+    musicStop(); if(!musicOn) return; initAudio(); if(!audioCtx) return;
+    const STEP=0.25;                                  /* 16 steps = one 4s bar */
+    const BASS=[65.4,65.4,87.3,98.0, 82.4,82.4,73.4,65.4];      /* C2 C2 F2 G2 / E2 E2 D2 C2 */
+    const LEAD=[523,659,784,659, 587,523,440,494, 523,659,880,784, 659,587,523,392];
+    const bar=()=>{
+      if(!musicOn) return;
+      for(let i=0;i<8;i++) tone(BASS[(beat*8+i)%BASS.length], .34, "triangle", .030, i*STEP*2);
+      for(let i=0;i<16;i++){
+        if(i%2===0 || i%8===3) tone(LEAD[(beat*16+i)%LEAD.length], .17, "triangle", .019, i*STEP);
+      }
+      for(let i=1;i<16;i+=4) tone(2400, .02, "square", .007, i*STEP);
+      beat++;
+    };
+    bar();
+    musicTimer=setInterval(bar, 3980);
   }
   function musicStop(){clearInterval(musicTimer);musicTimer=null}
   document.querySelectorAll(".station").forEach(a=>{
@@ -463,12 +484,25 @@ html, body { overscroll-behavior:none; }
     a.addEventListener("click",()=>sfx("ok"));
   });
   document.getElementById("musicBtn").onclick=function(){
-    musicOn=!musicOn;this.textContent=musicOn?"♫":"♩";musicOn?musicStart():musicStop();
+    musicOn=!musicOn; this.textContent=musicOn?"\u266b":"\u2669";
+    try{localStorage.setItem("soimMusic",musicOn?"on":"off")}catch(e){}
+    if(musicOn){initAudio();musicStart()}else musicStop();
   };
   document.getElementById("soundBtn").onclick=function(){soundOn=!soundOn;this.textContent=soundOn?"🔊":"🔇"};
   document.getElementById("fullBtn").onclick=()=>{
     if(!document.fullscreenElement)document.documentElement.requestFullscreen?.();else document.exitFullscreen?.();
   };
+
+  /* ---- background music: starts on first tap, remembered across the whole workshop ---- */
+  try{ if(localStorage.getItem("soimMusic")==="off") musicOn=false; }catch(e){}
+  (function(){
+    const btn=document.getElementById("musicBtn");
+    if(btn) btn.textContent = musicOn ? "\u266b" : "\u2669";
+    const kick=()=>{ initAudio(); if(musicOn) musicStart();
+      window.removeEventListener("pointerdown",kick); window.removeEventListener("keydown",kick); };
+    window.addEventListener("pointerdown",kick); window.addEventListener("keydown",kick);
+    setInterval(()=>{ if(musicOn && !musicTimer && audioCtx) musicStart(); }, 1500);
+  })();
 })();
 </script>
 </body>
