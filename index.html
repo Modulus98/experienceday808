@@ -277,17 +277,8 @@ table.gt tr.tot td { border-top:2px solid var(--yellow); border-bottom:0; font-w
 .station.mg { border-color:#ffac40; } .station.mg .head { background:linear-gradient(#dd6718,#a83909); }
 .station.mk { border-color:#c778ff; } .station.mk .head { background:linear-gradient(#8a36c8,#54168d); }
 .station.ib { border-color:#5fd8e8; } .station.ib .head { background:linear-gradient(#0e7d8f,#064e59); }
-.facil {
-  margin-top:16px; background:#061d43e8; border:3px dashed #1766c5; border-radius:22px; padding:14px 18px;
-}
-.facil h3 { margin:0 0 6px; color:var(--yellow); font-size:17px; }
-.facil ol { margin:0; padding-left:20px; font-size:14.5px; line-height:1.55; color:#cfe0f6; }
-.facil li { margin:5px 0; }
-.facil .docs { display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; }
-.facil .docs a { flex:1 1 200px; text-align:center; text-decoration:none; color:#2a1c00; font-weight:1000; font-size:15px;
-  background:var(--yellow); border:3px solid var(--ink); border-radius:16px; padding:11px 14px; box-shadow:0 5px 0 #020b1b; }
-.facil .docs a:hover { background:#ffe06a; }
-.facil .docs a small { display:block; font-weight:normal; font-size:12px; color:#4a3a10; }
+.closing { margin-top:18px; text-align:center; font-size:15.5px; font-weight:700; color:#dce9fb;
+  background:#061d43e8; border:3px solid #1766c5; border-radius:20px; padding:14px 18px; }
 @media(max-width:640px){
   .hero { padding:14px; border-width:4px; }
   .station .head .who b { font-size:20px; } .station .head .icon { font-size:38px; }
@@ -425,18 +416,8 @@ html, body { overscroll-behavior:none; }
 
     </div>
 
-    <div class="facil">
-      <h3>👩‍🏫 For your student facilitator</h3>
-      <ol>
-        <li>Every station opens with a short <b>LEARN</b> section — walk the group through those slides before anyone plays. Station 1 works well as the warm-up for a whole group.</li>
-        <li>Stations 1 and 2 are solo, so they suit a queue. Stations 3 and 4 are duels — pair participants up, or let them take on the Coach.</li>
-        <li>The 🏠 button at the top of every game brings you straight back to this page.</li>
-        <li>Ask the closing question at each station: <i>which of these four jobs would you actually want to do?</i></li>
-      </ol>
-      <div class="docs">
-        <a href="user-guide.html">📖 USER GUIDE<small>How to play all four stations · printable</small></a>
-        <a href="debrief-slides.html">🎬 DEBRIEF SLIDES<small>12 slides for the closing discussion</small></a>
-      </div>
+    <p class="closing">🙋 Play them in any order. If you get stuck, ask any SoIM student helper — they are here to play too.</p>
+
     </div>
 
   </div></main>
@@ -462,16 +443,32 @@ html, body { overscroll-behavior:none; }
     if(type==="select"){tone(350,.05,"square",.035);tone(520,.06,"triangle",.03,.04)}
     if(type==="ok"){tone(560,.07,"triangle",.07);tone(820,.10,"triangle",.06,.06)}
   }
+  var bgmBroken=false, synthTimer=null, sBeat=0;
+  function synthMusic(){                      /* fallback: only used if music.mp3 cannot load */
+    clearInterval(synthTimer); synthTimer=null;
+    if(!musicOn) return; initAudio(); if(!audioCtx) return;
+    var S=0.3125, BASS=[130.8,110,87.3,98], LEAD=[523,659,784,659,587,523,440,494];
+    var bar=function(){
+      if(!musicOn) return;
+      for(var i=0;i<4;i++) tone(BASS[(sBeat*4+i)%4], .42, "triangle", .075, i*S*2);
+      for(var j=0;j<8;j++) if(j%2===0) tone(LEAD[(sBeat*8+j)%8], .20, "triangle", .045, j*S);
+      for(var k=1;k<8;k+=2) tone(2400, .02, "square", .016, k*S);
+      sBeat++;
+    };
+    bar(); synthTimer=setInterval(bar, 8*S*1000-30);
+  }
   function musicStart(){
-    const a=document.getElementById("bgm");
-    if(!a || !musicOn) return;
-    a.loop=true; a.volume=0.5;
-    try{ const p=parseFloat(localStorage.getItem("soimMusicPos")||"0");
+    if(!musicOn) return;
+    var a=document.getElementById("bgm");
+    if(!a || bgmBroken){ synthMusic(); return; }
+    a.loop=true; a.volume=0.8;
+    try{ var p=parseFloat(localStorage.getItem("soimMusicPos")||"0");
          if(p>0 && a.duration && p < a.duration-0.25) a.currentTime=p; }catch(e){}
-    const pr=a.play(); if(pr && pr.catch) pr.catch(()=>{});
+    var pr=a.play(); if(pr && pr.catch) pr.catch(function(){});
   }
   function musicStop(){
-    const a=document.getElementById("bgm");
+    clearInterval(synthTimer); synthTimer=null;
+    var a=document.getElementById("bgm");
     if(!a) return;
     try{ localStorage.setItem("soimMusicPos", String(a.currentTime||0)); }catch(e){}
     a.pause();
@@ -498,9 +495,21 @@ html, body { overscroll-behavior:none; }
     const kick=()=>{ initAudio(); if(musicOn) musicStart();
       window.removeEventListener("pointerdown",kick); window.removeEventListener("keydown",kick); };
     window.addEventListener("pointerdown",kick); window.addEventListener("keydown",kick);
-    setInterval(()=>{
-      const a=document.getElementById("bgm"); if(!a) return;
-      if(musicOn && a.paused) musicStart();
+    /* fall back to the synth loop if the file is unavailable — and back again if it appears */
+    (function(){
+      var a=document.getElementById("bgm"); if(!a) return;
+      a.addEventListener("error", function(){ bgmBroken=true; if(musicOn) synthMusic(); });
+      a.addEventListener("canplay", function(){
+        if(bgmBroken){ bgmBroken=false; clearInterval(synthTimer); synthTimer=null; if(musicOn) musicStart(); }
+      });
+      setTimeout(function(){
+        if(a.error || a.networkState===3){ bgmBroken=true; if(musicOn) synthMusic(); }
+      }, 3000);
+    })();
+    setInterval(function(){
+      var a=document.getElementById("bgm"); if(!a) return;
+      if(musicOn && !bgmBroken && a.paused) musicStart();
+      if(musicOn && bgmBroken && !synthTimer) synthMusic();
       if(musicOn && !a.paused){ try{ localStorage.setItem("soimMusicPos", String(a.currentTime||0)); }catch(e){} }
     }, 1500);
   })();
