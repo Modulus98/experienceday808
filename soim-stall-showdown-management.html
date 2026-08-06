@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stall Showdown | ViTrox College SoIM</title>
+<style>
+:root {
+  --navy:#071f4b; --navy2:#0b3478; --blue:#0f66df; --cyan:#26c8ff;
+  --yellow:#ffd43b; --orange:#ff8418; --green:#4ad16d; --purple:#8e4ee8;
+  --red:#ff4d58; --white:#fff; --ink:#12233f;
+  --p1:#26c8ff; --p2:#ff86ab;
+}
+* { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body { margin:0; width:100%; height:100%; overflow:hidden; font-family:Arial,Helvetica,sans-serif; background:#061a3c; }
+button { font:inherit; }
+.game {
+  width:100vw; height:100vh; position:relative; overflow:hidden; color:white;
+  background:
+    linear-gradient(rgba(4,24,55,.56),rgba(4,24,55,.66)),
+    radial-gradient(circle at 50% 10%,#2e75b9 0,#19395e 35%,#0b213d 75%);
+}
+.game:before {
+  content:""; position:absolute; inset:0; opacity:.16; pointer-events:none;
+  background:repeating-linear-gradient(90deg,transparent 0 72px,#fff 73px 74px),
+             repeating-linear-gradient(0deg,transparent 0 72px,#fff 73px 74px);
+}
+.topbar {
+  height:112px; display:grid; grid-template-columns:280px 1fr 245px 170px;
+  gap:14px; align-items:center; padding:12px 24px; position:relative; z-index:10;
+  background:linear-gradient(180deg,#092861,#071b43);
+  border-bottom:4px solid #0e69ee; box-shadow:0 8px 24px #0008;
+}
+.brand { display:flex; align-items:center; }
+.brand img { width:235px; max-height:84px; object-fit:contain; filter:drop-shadow(0 6px 10px #0008); }
+.brand .fallback { font-size:22px; font-weight:1000; color:var(--yellow); line-height:1.05; }
+.titlebox { text-align:center; line-height:.88; text-shadow:0 7px 0 #001438,0 12px 18px #000; }
+.titlebox .small { font-size:clamp(18px,2.2vw,30px); font-weight:1000; color:#fff; }
+.titlebox .big { font-size:clamp(32px,4.6vw,64px); font-weight:1000; color:var(--yellow); letter-spacing:-2px; }
+.titlebox .tag { display:inline-block; margin-top:7px; padding:6px 18px; border-radius:999px; background:#0f60d2; font-weight:900; font-size:15px; }
+.soim { padding:14px; border:3px solid #5073a8; border-radius:22px; text-align:center; background:#0b2857; box-shadow:inset 0 0 18px #0007; }
+.soim strong { font-size:32px; color:var(--yellow); display:block; }
+.soim span { font-size:12px; font-weight:800; }
+.controls { display:flex; gap:10px; justify-content:flex-end; }
+.circle {
+  width:50px; height:50px; border-radius:50%; border:2px solid #7fb5ff; cursor:pointer;
+  background:linear-gradient(#153d7f,#071c43); color:white; font-size:24px; box-shadow:0 6px 0 #020b1b;
+}
+
+/* ===== STATUS STRIP ===== */
+.status {
+  height:92px; display:grid; grid-template-columns:240px 1fr 330px; align-items:center; gap:18px;
+  padding:10px 22px; position:relative; z-index:9;
+}
+.timerbox,.scorebox,.howto {
+  background:#061d43e8; border:3px solid #1766c5; border-radius:22px; box-shadow:0 10px 18px #0006;
+}
+.timerbox { padding:10px 18px; text-align:center; }
+.timerbox b { display:block; font-size:17px; }
+.timerbox span { font-size:42px; font-weight:1000; color:var(--yellow); }
+.timerbox.hot span { color:var(--red); }
+.scorebox { display:grid; grid-template-columns:repeat(4,1fr); text-align:center; padding:11px; }
+.scorebox div+div { border-left:1px solid #3d72b5; }
+.scorebox small { display:block; font-weight:900; font-size:13px; }
+.scorebox strong { font-size:30px; color:var(--yellow); }
+.scorebox .one strong { color:var(--p1); }
+.scorebox .two strong { color:var(--p2); }
+.scorebox .combo strong { color:#c47cff; }
+.scorebox .best strong { color:#8fe36b; }
+.howto { padding:10px 16px; font-size:14px; line-height:1.35; }
+.howto h3 { margin:0 0 4px; color:var(--yellow); text-align:center; }
+.main {
+  position:absolute; left:18px; right:18px; top:204px; bottom:18px;
+}
+.panel { position:absolute; inset:0; overflow-y:auto; padding:2px 4px 10px; }
+
+/* ===== IN-GAME PANELS (house style) ===== */
+.gcard {
+  background:#061d43e8; border:3px solid #1766c5; border-radius:22px; box-shadow:0 10px 18px #0006;
+  padding:16px 18px; margin-bottom:12px;
+}
+.gcard.one { border-color:var(--p1); }
+.gcard.two { border-color:var(--p2); }
+.gcard h2 { margin:0 0 8px; font-size:clamp(20px,3vw,28px); color:var(--yellow); }
+.gcard h3 { margin:14px 0 6px; font-size:17px; color:var(--cyan); }
+.gcard p { margin:0 0 10px; font-size:15px; line-height:1.45; }
+.dim { color:#a8c4e8; }
+.tbar { height:14px; background:#0a2c5e; border:2px solid #1766c5; border-radius:999px; overflow:hidden; margin:4px 0 12px; }
+.tbar i { display:block; height:100%; background:var(--green); transition:width .12s linear; }
+.tbar i.warn { background:var(--yellow); } .tbar i.hot { background:var(--red); }
+.grid4 { display:grid; grid-template-columns:repeat(auto-fit,minmax(122px,1fr)); gap:10px; }
+.grid2 { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:12px; }
+.kpi { background:#0a2c5e; border:2px solid #2f6fbe; border-radius:16px; padding:8px 10px; text-align:center; }
+.kpi small { display:block; font-size:11.5px; font-weight:900; color:#a8c4e8; text-transform:uppercase; }
+.kpi strong { font-size:26px; color:var(--yellow); }
+.sl { margin-bottom:14px; }
+.sl label { display:flex; justify-content:space-between; align-items:baseline; gap:10px; font-weight:900; font-size:16px; margin-bottom:4px; }
+.sl label i { font-style:normal; color:var(--yellow); font-size:19px; }
+.sl .hint { font-size:12.5px; color:#a8c4e8; margin-top:2px; }
+input[type=range] { -webkit-appearance:none; appearance:none; width:100%; height:30px; background:transparent; cursor:pointer; margin:0; }
+input[type=range]::-webkit-slider-runnable-track { height:12px; background:#0a2c5e; border:2px solid #2f6fbe; border-radius:999px; }
+input[type=range]::-moz-range-track { height:12px; background:#0a2c5e; border:2px solid #2f6fbe; border-radius:999px; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:26px; height:26px; margin-top:-9px; border-radius:50%; background:var(--yellow); border:3px solid #071f4b; }
+input[type=range]::-moz-range-thumb { width:26px; height:26px; border-radius:50%; background:var(--yellow); border:3px solid #071f4b; }
+input[type=text] { font:inherit; font-weight:900; padding:10px 12px; border-radius:14px; border:3px solid #2f6fbe; background:#0a2c5e; color:#fff; width:100%; }
+.opt {
+  display:flex; gap:12px; align-items:flex-start; width:100%; text-align:left; cursor:pointer;
+  background:linear-gradient(#0e4a95,#0a2c5e); color:#fff; border:3px solid #2f6fbe; border-radius:18px;
+  padding:12px 14px; margin-bottom:9px; box-shadow:0 6px 0 #051c3d; font-size:15.5px; font-weight:700; line-height:1.35;
+}
+.opt:hover { filter:brightness(1.12); }
+.opt:active { transform:translateY(4px); box-shadow:0 2px 0 #051c3d; }
+.opt .ico { font-size:27px; line-height:1; }
+.opt small { display:block; font-weight:400; color:#bcd6f5; font-size:13px; margin-top:3px; }
+.opt.sel { border-color:var(--yellow); background:linear-gradient(#155ab4,#0d3a76); }
+.opt.right { border-color:var(--green); background:linear-gradient(#17703f,#0d4527); }
+.opt.wrong { border-color:var(--red); background:linear-gradient(#8c2029,#4d1218); }
+.opt[disabled] { opacity:.45; cursor:not-allowed; }
+.crew { display:grid; grid-template-columns:repeat(auto-fit,minmax(152px,1fr)); gap:10px; }
+.mate { background:#0a2c5e; border:3px solid #2f6fbe; border-radius:18px; padding:9px; text-align:center; }
+.mate .nm { font-size:18px; font-weight:1000; color:#fff; }
+.mate .jb { font-size:12px; font-weight:900; color:var(--yellow); min-height:16px; }
+.mate svg { width:64px; height:64px; display:block; margin:0 auto; }
+.mate .stats { font-size:11.5px; text-align:left; color:#bcd6f5; margin:4px 0; }
+.jobs { display:flex; gap:4px; justify-content:center; flex-wrap:wrap; }
+.jobs button { font-size:13px; padding:4px 8px; border-radius:11px; border:2px solid #7fb5ff; background:#123c7c; color:#fff; cursor:pointer; box-shadow:0 3px 0 #051c3d; }
+.jobs button.on { background:var(--green); color:#04240f; border-color:#bff3cd; }
+.jobs button[disabled] { opacity:.35; cursor:not-allowed; }
+.vs { display:grid; grid-template-columns:1fr auto 1fr; gap:12px; align-items:center; margin:8px 0 4px; }
+.vs .side { background:#0a2c5e; border:3px solid #2f6fbe; border-radius:18px; padding:12px 8px; text-align:center; }
+.vs .side.one { border-color:var(--p1); } .vs .side.two { border-color:var(--p2); }
+.vs .side.won { background:linear-gradient(#17703f,#0d4527); border-color:var(--green); }
+.vs .side b { display:block; font-size:16px; }
+.vs .side strong { display:block; font-size:44px; color:var(--yellow); line-height:1; }
+.vs .side small { color:#bcd6f5; font-size:12px; }
+.vs .mid { font-size:22px; font-weight:1000; color:#a8c4e8; }
+.meterrow { display:flex; align-items:center; gap:8px; margin:6px 0; }
+.meterrow b { min-width:86px; font-size:13px; }
+.meter { flex:1; height:14px; background:#0a2c5e; border:2px solid #2f6fbe; border-radius:999px; overflow:hidden; }
+.meter i { display:block; height:100%; background:var(--green); }
+.meter.q i { background:var(--yellow); } .meter.r i { background:var(--red); }
+table.gt { width:100%; border-collapse:collapse; font-size:13.5px; }
+table.gt th { text-align:right; font-size:11px; text-transform:uppercase; color:#a8c4e8; padding:5px 4px; border-bottom:2px solid #2f6fbe; }
+table.gt th:first-child,table.gt td:first-child { text-align:left; }
+table.gt td { text-align:right; padding:5px 4px; border-bottom:1px solid #1c4d90; }
+table.gt tr.tot td { border-top:2px solid var(--yellow); border-bottom:0; font-weight:1000; font-size:15px; color:var(--yellow); }
+.pass { text-align:center; padding:26px 14px; }
+.pass .eyes { font-size:56px; }
+.pass .who { font-size:clamp(28px,6vw,46px); font-weight:1000; color:var(--yellow); margin:6px 0; }
+.scene { border:3px solid #1766c5; border-radius:20px; overflow:hidden; background:linear-gradient(#123f7d,#0a2547); }
+.scene svg { width:100%; height:auto; display:block; }
+.chip { display:inline-block; background:#0f60d2; border-radius:999px; padding:4px 12px; font-size:12.5px; font-weight:900; margin:0 6px 6px 0; }
+
+/* ===== OVERLAYS (Learn slides / Instructions / End) ===== */
+.overlay {
+  position:absolute; inset:0; z-index:50; display:grid; place-items:center;
+  background:linear-gradient(145deg,#061946ef,#0c3c7af2); backdrop-filter:blur(8px);
+}
+.card {
+  width:min(840px,94vw); padding:28px 32px; border-radius:30px; background:#fff; color:var(--ink);
+  text-align:center; box-shadow:0 25px 70px #000c; border:7px solid #2a6cc8;
+  max-height:92vh; overflow-y:auto;
+}
+.card img { width:min(260px,55vw); max-height:95px; object-fit:contain; }
+.card h1 { margin:4px 0; font-size:clamp(30px,5vw,52px); color:#0a3479; line-height:1; }
+.card h1 span { color:#ff8614; }
+.card h2 { margin:4px 0 6px; font-size:clamp(22px,3.6vw,32px); color:#0a3479; }
+.card p { font-size:16px; font-weight:700; }
+.card .subtitle { font-size:15.5px; font-weight:700; color:#3a4a63; margin-top:2px; }
+.step-tag { display:inline-block; background:#0a3479; color:#fff; font-weight:900; font-size:12px; padding:5px 14px; border-radius:999px; margin-bottom:6px; }
+.slide-tag { display:inline-block; background:#ff8418; color:#fff; font-weight:900; font-size:12px; padding:5px 14px; border-radius:999px; margin-bottom:8px; }
+.start {
+  border:none; border-radius:999px; padding:14px 34px; cursor:pointer; color:white;
+  font-size:21px; font-weight:1000; background:linear-gradient(135deg,#ff5f84,#ff8d25);
+  box-shadow:0 9px 0 #b92d49;
+}
+.start:active { transform:translateY(6px); box-shadow:0 3px 0 #b92d49; }
+.start.ghost { background:linear-gradient(135deg,#8aa9d6,#5578ab); box-shadow:0 9px 0 #34507e; }
+.start.blue { background:linear-gradient(135deg,#2f8bff,#0f52c8); box-shadow:0 9px 0 #0b3782; }
+.navRow { display:flex; justify-content:center; gap:14px; margin-top:16px; flex-wrap:wrap; }
+.dots { display:flex; justify-content:center; gap:8px; margin:14px 0 4px; }
+.dots span { width:10px; height:10px; border-radius:50%; background:#c9d6ea; display:inline-block; }
+.dots span.active { background:#0a3479; width:26px; border-radius:6px; }
+.slide { display:none; }
+.slide.active { display:block; }
+.mini-flow { display:flex; align-items:center; justify-content:center; gap:6px; margin:14px 0; flex-wrap:wrap; }
+.mini-step { width:120px; padding:12px 8px; border-radius:18px; color:#fff; box-shadow:0 6px 12px #0003; }
+.mini-step .icon { font-size:34px; display:block; }
+.mini-step b { display:block; font-size:14px; margin-top:3px; }
+.mini-step small { display:block; font-size:11px; opacity:.9; margin-top:2px; }
+.mini-arrow { font-size:22px; color:#0a3479; font-weight:1000; }
+.bullet-list { text-align:left; max-width:580px; margin:12px auto; font-size:15.5px; font-weight:700; color:#22314e; }
+.bullet-list div { margin:8px 0; }
+.instr-list { text-align:left; max-width:580px; margin:14px auto; font-size:16px; font-weight:700; color:#22314e; }
+.instr-list div { margin:8px 0; }
+.legend { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin:16px 0; font-size:13px; font-weight:900; }
+.legend div { padding:10px 4px; border-radius:12px; color:white; }
+.namerow { display:grid; grid-template-columns:1fr 1fr; gap:10px; max-width:560px; margin:12px auto 4px; text-align:left; }
+.namerow label { font-size:12px; font-weight:900; color:#3a4a63; display:block; margin-bottom:3px; }
+.namerow input { font:inherit; font-weight:900; width:100%; padding:10px 12px; border-radius:12px; border:3px solid #9db8dd; color:var(--ink); }
+.resultbadge { display:inline-block; margin:10px 0; padding:10px 20px; border-radius:999px; background:#fff0a8; border:3px solid #ffca28; font-weight:1000; }
+.back-link { color:#0a3479; font-weight:800; text-decoration:underline; cursor:pointer; }
+.float {
+  position:absolute; z-index:30; pointer-events:none; font-size:30px; font-weight:1000;
+  text-shadow:0 3px 0 #fff; animation:floatUp .9s ease forwards;
+}
+.combo-banner {
+  position:absolute; left:50%; top:44%; z-index:35; transform:translate(-50%,-50%) scale(0);
+  font-size:60px; font-weight:1000; color:white; text-shadow:0 6px 0 #051331; pointer-events:none;
+}
+.combo-banner.show { animation:comboPop .65s ease; }
+.confetti { position:absolute; top:-20px; width:12px; height:18px; z-index:60; pointer-events:none; animation:fall 2.8s linear forwards; }
+.hidden { display:none !important; }
+
+@keyframes floatUp { to { transform:translateY(-90px) scale(1.15); opacity:0; } }
+@keyframes comboPop { 0%{transform:translate(-50%,-50%) scale(.3)} 45%{transform:translate(-50%,-50%) scale(1.1)} 100%{transform:translate(-50%,-65%) scale(.9);opacity:0} }
+@keyframes fall { to { transform:translate(var(--drift),110vh) rotate(900deg); opacity:.1; } }
+@keyframes pop { from{transform:scale(.8);opacity:0} to{transform:scale(1);opacity:1} }
+.pop { animation:pop .3s ease both; }
+
+@media(max-width:900px) {
+  .topbar { grid-template-columns:190px 1fr 190px 110px; height:100px; padding:10px; }
+  .brand img { width:175px; } .soim strong{font-size:24px}
+  .status { grid-template-columns:170px 1fr; height:92px; padding:8px; }
+  .howto { display:none; } .main { top:192px; }
+  .scorebox strong{font-size:24px} .scorebox small{font-size:11px}
+}
+@media(max-width:640px) {
+  .topbar { grid-template-columns:130px 1fr 82px; height:86px; }
+  .soim { display:none; } .brand img{width:125px} .titlebox .small{font-size:15px} .titlebox .big{font-size:28px} .titlebox .tag{font-size:10px}
+  .circle{width:38px;height:38px;font-size:18px} .controls{gap:4px}
+  .status{grid-template-columns:112px 1fr;height:78px} .timerbox span{font-size:28px} .timerbox b{font-size:12px} .scorebox strong{font-size:19px}
+  .main{top:164px;left:8px;right:8px;bottom:8px}
+  .gcard{padding:12px} .vs .side strong{font-size:32px}
+}
+@media(prefers-reduced-motion:reduce){ *{animation:none!important;transition:none!important} }
+</style>
+</head>
+<body>
+<div class="game" id="game">
+  <header class="topbar">
+    <div class="brand"><img src="https://placehold.co/235x84/071f4b/ffd43b?text=ViTrox+College" alt="ViTrox College" onerror="this.outerHTML='&lt;div class=\'fallback\'&gt;ViTrox&lt;br&gt;College&lt;/div&gt;'"></div>
+    <div class="titlebox">
+      <div class="small">STALL</div>
+      <div class="big">SHOWDOWN 🥤</div>
+      <div class="tag">PLAN IT, RUN IT, WIN IT!</div>
+    </div>
+    <div class="soim"><strong>SoIM</strong><span>SCHOOL OF INDUSTRIAL MANAGEMENT<br>EXPERIENCE DAY</span></div>
+    <div class="controls">
+      <button class="circle" id="musicBtn" title="Music">♫</button>
+      <button class="circle" id="soundBtn" title="Sound">🔊</button>
+      <button class="circle" id="fullBtn" title="Full screen">⛶</button>
+    </div>
+  </header>
+
+  <section class="status" id="soloStatus">
+    <div class="timerbox" id="timerBox"><b>⏰ TIME LEFT</b><span id="timer">00:00</span></div>
+    <div class="scorebox">
+      <div class="one"><small id="n1lab">PLAYER 1</small><strong id="score1">0</strong></div>
+      <div class="combo"><small>STREAK</small><strong id="streak">x0</strong></div>
+      <div class="two"><small id="n2lab">PLAYER 2</small><strong id="score2">0</strong></div>
+      <div class="best"><small>HIGH SCORE</small><strong id="best">0</strong></div>
+    </div>
+    <div class="howto"><h3>HOW TO PLAY</h3>1. Take turns — pass the tablet when it says to<br>2. Every choice is on a <b style="color:#ffd43b">clock</b>: seconds left = points<br>3. Most points after 4 hours <b style="color:#67e26d">wins the fair</b></div>
+  </section>
+
+  <main class="main"><div class="panel" id="panel"></div></main>
+  <div class="combo-banner" id="comboBanner"></div>
+
+  <!-- ============ STEP 1: LEARN — 6 slides, facilitator-led (~5 min) ============ -->
+  <section class="overlay" id="learnScreen">
+    <div class="card">
+      <img src="https://placehold.co/260x95/071f4b/ffd43b?text=ViTrox+College" alt="ViTrox College">
+
+      <div class="slide active" data-slide="1">
+        <span class="step-tag">STEP 1 OF 3 · LEARN</span> <span class="slide-tag">SLIDE 1 / 6</span>
+        <h1>What is <span>Management?</span></h1>
+        <p>A manager does not do all the work. A manager makes sure the work works.</p>
+        <div class="mini-flow">
+          <div class="mini-step" style="background:#0d5da8"><span class="icon">🗓️</span><b>PLAN</b></div>
+          <div class="mini-arrow">➜</div>
+          <div class="mini-step" style="background:#368d25"><span class="icon">👥</span><b>ORGANISE</b></div>
+          <div class="mini-arrow">➜</div>
+          <div class="mini-step" style="background:#cf5b14"><span class="icon">💪</span><b>LEAD</b></div>
+          <div class="mini-arrow">➜</div>
+          <div class="mini-step" style="background:#7c31ba"><span class="icon">🔍</span><b>CHECK</b></div>
+        </div>
+        <div class="bullet-list">
+          <div>🧠 These four jobs are called <b>Planning, Organising, Leading and Controlling</b> — every manager in every industry does them.</div>
+          <div>🏪 Today you will do all four while running a smoothie stall against a rival stall.</div>
+        </div>
+      </div>
+
+      <div class="slide" data-slide="2">
+        <span class="step-tag">STEP 1 OF 3 · LEARN</span> <span class="slide-tag">SLIDE 2 / 6</span>
+        <h2>Why All Four Matter</h2>
+        <p>Drop any one of them and the day falls apart in a different way.</p>
+        <div class="bullet-list">
+          <div>🗓️ No <b>plan</b> — you buy the wrong things and run out of money or stock.</div>
+          <div>👥 No <b>organising</b> — your best person ends up on the wrong job and the queue crawls.</div>
+          <div>💪 No <b>leading</b> — one argument or one sick friend stops everything.</div>
+          <div>🔍 No <b>checking</b> — you never find out which of those three actually cost you the money.</div>
+        </div>
+      </div>
+
+      <div class="slide" data-slide="3">
+        <span class="step-tag">STEP 1 OF 3 · LEARN</span> <span class="slide-tag">SLIDE 3 / 6</span>
+        <h2>Meet the 4 Jobs at Your Stall</h2>
+        <div class="mini-flow">
+          <div class="mini-step" style="background:#0d5da8"><span class="icon">🥣</span><b>BLENDER</b><small>Makes the drink</small></div>
+          <div class="mini-step" style="background:#368d25"><span class="icon">🥤</span><b>SERVER</b><small>Hands it over</small></div>
+          <div class="mini-step" style="background:#cf5b14"><span class="icon">💰</span><b>CASHIER</b><small>Takes the money</small></div>
+          <div class="mini-step" style="background:#7c31ba"><span class="icon">🧽</span><b>CLEANER</b><small>Keeps it tidy</small></div>
+        </div>
+        <div class="bullet-list">
+          <div>⛓️ Blend ➜ serve ➜ pay happens in that order, so the queue can only move as fast as your <b>slowest</b> of those three.</div>
+          <div>⭐ Your four friends are good at different jobs. Read their stars before you choose.</div>
+        </div>
+      </div>
+
+      <div class="slide" data-slide="4">
+        <span class="step-tag">STEP 1 OF 3 · LEARN</span> <span class="slide-tag">SLIDE 4 / 6</span>
+        <h2>Why Checking Matters</h2>
+        <p>Every hour you sell the <b>smallest</b> of three numbers.</p>
+        <div class="bullet-list">
+          <div>🍓 How many cups of fruit you have left.</div>
+          <div>⚡ How many cups your crew can actually make.</div>
+          <div>🧍 How many customers chose your stall instead of your rival&rsquo;s.</div>
+          <div>🔍 A manager finds out <b>which one</b> is holding them back, then fixes that one. Fixing the wrong thing costs money and changes nothing.</div>
+        </div>
+      </div>
+
+      <div class="slide" data-slide="5">
+        <span class="step-tag">STEP 1 OF 3 · LEARN</span> <span class="slide-tag">SLIDE 5 / 6</span>
+        <h2>Careers &amp; Technology in Management</h2>
+        <div class="bullet-list">
+          <div>💼 <b>Careers:</b> operations management, human resources, project management, retail management, production planning.</div>
+          <div>📡 <b>Technology:</b> staff rostering apps, point-of-sale systems, live dashboards and stock alerts all tell managers where the weak link is.</div>
+          <div>🎓 Studying Industrial Management prepares you to run the team, not just join it.</div>
+        </div>
+      </div>
+
+      <div class="slide" data-slide="6">
+        <span class="step-tag">STEP 1 OF 3 · LEARN</span> <span class="slide-tag">SLIDE 6 / 6</span>
+        <h2>Ready to Run a Stall?</h2>
+        <p>Two stalls, one fair, the same customers walking past.</p>
+        <div class="bullet-list">
+          <div>🤜🤛 Play against a friend on this tablet, or against the Coach.</div>
+          <div>⏱️ Every decision is on a clock, and the seconds you do not use become points.</div>
+        </div>
+        <p style="font-size:13px;color:#5b6b85;">👩‍🏫 Ask your SoIM student facilitator any questions before continuing!</p>
+      </div>
+
+      <div class="dots" id="learnDots"></div>
+      <div class="navRow">
+        <button class="start ghost" id="learnPrevBtn">← BACK</button>
+        <button class="start" id="learnNextBtn">NEXT ➜</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ STEP 2: INSTRUCTIONS ============ -->
+  <section class="overlay hidden" id="instructionScreen">
+    <div class="card">
+      <img src="https://placehold.co/260x95/071f4b/ffd43b?text=ViTrox+College" alt="ViTrox College">
+      <span class="step-tag">STEP 2 OF 3 · HOW TO PLAY</span>
+      <h2>How to Play: Stall Showdown</h2>
+      <p class="subtitle">$120 each, four friends, four hours. Every cup sells for $3.</p>
+
+      <div class="instr-list">
+        <div>1️⃣ <b>Plan</b> — split your money between fruit and your sign, then set your goal.</div>
+        <div>2️⃣ <b>Organise</b> — give each friend a job. The slowest job sets your speed.</div>
+        <div>3️⃣ <b>Lead</b> — three surprises hit both stalls. Pick your response before the clock ends.</div>
+        <div>4️⃣ <b>Check</b> — read your own numbers, find your weak link, fix it for the last hour.</div>
+        <div>5️⃣ ⏱️ Clock runs out = you get the worst option and <b style="color:#c0392b">−50 points</b>.</div>
+      </div>
+
+      <div class="legend">
+        <div style="background:#0d5da8">🥤 Cup sold +10</div>
+        <div style="background:#368d25">🏆 Win an hour +200</div>
+        <div style="background:#cf5b14">⏱️ Per second left +3</div>
+        <div style="background:#7c31ba">🔍 Right diagnosis +150</div>
+      </div>
+
+      <div class="namerow">
+        <div><label for="n1">PLAYER 1 NAME</label><input type="text" id="n1" value="Player 1" maxlength="12"></div>
+        <div><label for="n2">PLAYER 2 NAME</label><input type="text" id="n2" value="Player 2" maxlength="12"></div>
+      </div>
+      <p class="subtitle" id="clockRow" style="margin-top:10px"></p>
+      <div class="navRow">
+        <button class="start" id="startBtn">2 PLAYERS ▶</button>
+        <button class="start blue" id="startCpuBtn">VS COACH 🤖</button>
+      </div>
+      <p><span class="back-link" id="backToLearnBtn">← Back to the management intro</span></p>
+    </div>
+  </section>
+
+  <!-- ============ STEP 3: RESULT ============ -->
+  <section class="overlay hidden" id="endScreen">
+    <div class="card">
+      <img src="https://placehold.co/260x95/071f4b/ffd43b?text=ViTrox+College" alt="ViTrox College">
+      <h1>Fair <span>Over!</span></h1>
+      <p id="resultText"></p>
+      <div class="resultbadge" id="rankText"></div>
+      <div id="resultDetail" style="margin-top:10px"></div>
+      <div class="navRow">
+        <button class="start" id="againBtn">PLAY AGAIN</button>
+        <button class="start ghost" id="reviewBtn">SEE THE NUMBERS</button>
+      </div>
+      <p><span class="back-link" id="newParticipantBtn">New participant? Start from the beginning</span></p>
+    </div>
+  </section>
+</div>
+
+<script>
+(() => {
+  const PRICE=3, HOURS=4, MONEY=120, FOOT=44;
+  const Q=new URLSearchParams(location.search);
+  const T=Math.max(1,Math.min(120,parseInt(Q.get("time"),10)||22));
+  const BESTKEY="soimStallShowdownBest";
+
+  const CREW=[
+    {id:"ari",n:"Ari",hue:"#ff8418",hair:"curl",blend:3,serve:2,cash:1,clean:2},
+    {id:"bea",n:"Bea",hue:"#8e4ee8",hair:"bun",blend:1,serve:3,cash:2,clean:2},
+    {id:"cai",n:"Cai",hue:"#26c8ff",hair:"cap",blend:2,serve:1,cash:3,clean:2},
+    {id:"dee",n:"Dee",hue:"#ff4d58",hair:"long",blend:2,serve:2,cash:2,clean:3}
+  ];
+  const JOBS=[{k:"blend",n:"Blender",e:"🥣"},{k:"serve",n:"Server",e:"🥤"},{k:"cash",n:"Cashier",e:"💰"},{k:"clean",n:"Cleaner",e:"🧽"}];
+  const EVENTS=[
+    {who:"bea",e:"😬",t:"A bus of 30 people just arrived. Both stalls have a queue out the door!",
+     o:[{ic:"🗣️",l:"Tell everyone to speed up",s:"Faster now, grumpier later",mood:-14,speed:1.22},
+        {ic:"🙋",l:"Jump in and serve yourself",s:"Hands beat orders",mood:6,speed:1.14},
+        {ic:"🎟️",l:"Hand out numbered tickets",s:"Same speed, calm queue, nobody walks off",mood:9,speed:1.02,attract:4},
+        {ic:"😐",l:"Let it sort itself out",s:"People drift to the other stall",mood:-6,speed:.92,attract:-5}]},
+    {who:"ari",e:"😤",t:"Ari and Cai are arguing about whose fault the slow drinks are. Customers can hear it.",
+     o:[{ic:"🤝",l:"Take them aside and swap their jobs",s:"Costs minutes, fixes the cause",mood:14,speed:.9},
+        {ic:"📣",l:"Tell Ari off in front of everyone",s:"Quiet is not the same as fixed",mood:-20,speed:1.04},
+        {ic:"🙈",l:"Pretend you did not hear",s:"It keeps costing you",mood:-9,speed:.92,attract:-3},
+        {ic:"🍫",l:"Snacks and a 5 minute break ($6)",s:"Cheap, and it works",mood:11,speed:.96,cost:6}]},
+    {who:"dee",e:"😱",t:"Your blender is smoking. The other stall is still running fine.",
+     o:[{ic:"🔌",l:"Stop and borrow one from next door",s:"Lose time, stay safe",mood:4,speed:.76},
+        {ic:"💸",l:"Rent a spare for $10",s:"Only if you kept spare money",mood:5,speed:1,cost:10},
+        {ic:"🤞",l:"Keep going and hope",s:"Very risky",mood:-8,speed:.55},
+        {ic:"🍹",l:"Switch to hand-shaken drinks",s:"Slower, but nothing breaks",mood:2,speed:.72}]}
+  ];
+  const CULPRITS=[
+    {k:"stock",ic:"🍓",l:"We ran out of fruit",why:"You sold every cup you had fruit for. Next time: more money on fruit, less on the sign."},
+    {k:"speed",ic:"🐌",l:"We were too slow",why:"You had fruit and customers, but the crew could not make drinks fast enough. That is a jobs problem, not a money problem."},
+    {k:"demand",ic:"🦗",l:"They went to the other stall",why:"You had fruit and speed to spare. Your rival&rsquo;s sign was pulling the crowd away from you."}
+  ];
+  const FIXES=[
+    {k:"stock",ic:"🛒",l:"Run and buy more fruit",need:12,d:"$12 for 20 more cups of stock"},
+    {k:"speed",ic:"🔀",l:"Move your best person to the slowest job",d:"Free. Faster queue"},
+    {k:"demand",ic:"📣",l:"Send two of you out shouting about tasters",d:"Free. Steals customers back"}
+  ];
+  const BOTPLANS=[
+    {ing:70,sign:40,target:60,jobs:{ari:"blend",bea:"serve",cai:"cash",dee:"clean"},picks:[2,0,1]},
+    {ing:60,sign:50,target:65,jobs:{ari:"blend",bea:"serve",cai:"cash",dee:"clean"},picks:[1,3,1]},
+    {ing:80,sign:30,target:70,jobs:{ari:"blend",bea:"serve",cai:"cash",dee:"clean"},picks:[2,0,3]}
+  ];
+  const RANKS=[[0,"Stall Helper"],[1000,"Shift Leader"],[1800,"Stall Supervisor"],[2500,"Operations Manager"],[3200,"SoIM Management Champion"]];
+
+  const game=document.getElementById("game"), panel=document.getElementById("panel");
+  const learnScreen=document.getElementById("learnScreen"), instructionScreen=document.getElementById("instructionScreen"), endScreen=document.getElementById("endScreen");
+  const comboBanner=document.getElementById("comboBanner"), timerBox=document.getElementById("timerBox");
+  let P=[], G={}, timer=null, audioCtx=null, musicTimer=null, musicOn=true, soundOn=true, beat=0;
+  let best=0; try{ best=Number(localStorage.getItem(BESTKEY)||0) }catch(e){}
+  document.getElementById("best").textContent=best;
+
+  /* ---- learn slides (house pattern) ---- */
+  const slides=Array.from(document.querySelectorAll("#learnScreen .slide"));
+  const learnDots=document.getElementById("learnDots");
+  slides.forEach((_,i)=>{const d=document.createElement("span");if(i===0)d.classList.add("active");learnDots.appendChild(d)});
+  let slideIdx=0;
+  function showSlide(i){
+    slides.forEach((s,idx)=>s.classList.toggle("active",idx===i));
+    Array.from(learnDots.children).forEach((d,idx)=>d.classList.toggle("active",idx===i));
+    document.getElementById("learnPrevBtn").style.visibility=i===0?"hidden":"visible";
+    document.getElementById("learnNextBtn").textContent=i===slides.length-1?"NEXT: HOW TO PLAY ➜":"NEXT ➜";
+    slideIdx=i;
+  }
+  document.getElementById("learnNextBtn").onclick=()=>{
+    if(slideIdx<slides.length-1)showSlide(slideIdx+1);
+    else{learnScreen.classList.add("hidden");instructionScreen.classList.remove("hidden")}
+  };
+  document.getElementById("learnPrevBtn").onclick=()=>{if(slideIdx>0)showSlide(slideIdx-1)};
+  document.getElementById("backToLearnBtn").onclick=()=>{instructionScreen.classList.add("hidden");learnScreen.classList.remove("hidden");showSlide(0)};
+  document.getElementById("newParticipantBtn").onclick=()=>{
+    endScreen.classList.add("hidden");instructionScreen.classList.add("hidden");learnScreen.classList.remove("hidden");showSlide(0);
+    document.getElementById("n1").value="Player 1";document.getElementById("n2").value="Player 2";panel.innerHTML="";
+  };
+  showSlide(0);
+  const clockRow=document.getElementById("clockRow");
+  clockRow.innerHTML="Clock speed: "+[[12,"Blitz"],[22,"Normal"],[40,"Chill"]].map(o=>
+    T===o[0]?"<b>"+o[1]+" "+o[0]+"s</b>":'<span class="back-link" data-clk="'+o[0]+'">'+o[1]+" "+o[0]+"s</span>").join(" · ");
+  clockRow.querySelectorAll("[data-clk]").forEach(s=>s.onclick=()=>{try{location.search="?time="+s.dataset.clk}catch(e){}});
+
+  /* ---- audio (house pattern) ---- */
+  function initAudio(){
+    if(!audioCtx){const C=window.AudioContext||window.webkitAudioContext;if(!C)return;audioCtx=new C()}
+    if(audioCtx&&audioCtx.state==="suspended")audioCtx.resume();
+  }
+  function tone(freq,dur=.08,type="sine",vol=.05,delay=0){
+    if(!soundOn&&!musicOn)return;initAudio();if(!audioCtx)return;
+    const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+    o.type=type;o.frequency.value=freq;g.gain.value=vol;
+    g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+delay+dur);
+    o.connect(g).connect(audioCtx.destination);
+    o.start(audioCtx.currentTime+delay);o.stop(audioCtx.currentTime+delay+dur);
+  }
+  function sfx(type){
+    if(!soundOn)return;
+    if(type==="select"){tone(350,.05,"square",.035);tone(520,.06,"triangle",.03,.04)}
+    if(type==="ok"){tone(560,.07,"triangle",.07);tone(820,.10,"triangle",.06,.06)}
+    if(type==="bad"){tone(170,.14,"sawtooth",.06);tone(110,.18,"square",.04,.07)}
+    if(type==="tick"){tone(900,.03,"square",.02)}
+  }
+  function musicStart(){
+    musicStop();if(!musicOn)return;initAudio();
+    const notes=[262,330,392,523,392,330,294,349];
+    musicTimer=setInterval(()=>{if(!musicOn||!G.running)return;tone(notes[beat%notes.length],.16,"triangle",.018);beat++},260);
+  }
+  function musicStop(){clearInterval(musicTimer);musicTimer=null}
+
+  /* ---- feedback (house pattern) ---- */
+  function floatText(text,good){
+    const el=document.createElement("div");el.className="float";el.textContent=text;
+    el.style.left=(window.innerWidth/2-70)+"px";el.style.top=(window.innerHeight*.30)+"px";
+    el.style.color=good?"#36d978":"#ff4d58";
+    game.appendChild(el);setTimeout(()=>el.remove(),950);
+  }
+  function showStreak(n){
+    if(n<2)return;
+    comboBanner.textContent=n+"x STREAK!";
+    comboBanner.classList.remove("show");void comboBanner.offsetWidth;comboBanner.classList.add("show");
+  }
+  function confetti(){
+    const colors=["#ffd43b","#26c8ff","#ff5f84","#4ad16d","#a968ff","#fff"];
+    for(let i=0;i<85;i++){const c=document.createElement("i");c.className="confetti";c.style.left=Math.random()*100+"%";
+      c.style.background=colors[Math.floor(Math.random()*colors.length)];c.style.setProperty("--drift",(Math.random()*340-170)+"px");
+      c.style.animationDelay=Math.random()*.6+"s";game.appendChild(c);setTimeout(()=>c.remove(),3500)}
+  }
+
+  /* ---- model ---- */
+  function mk(i,name,bot){
+    return {i,name,bot:!!bot,ing:60,sign:30,target:60,jobs:{},mood:60,cups:0,money:MONEY,spent:0,
+      pts:0,bd:[],log:[],speedMul:1,attract:0,extraStock:0,tries:0,diag:null,fix:null,timeouts:0,lastSold:0,streak:0};
+  }
+  const other=p=>P[1-p.i];
+  const stock=p=>p.ing+p.extraStock;
+  function assigned(p){const o={};for(const k in p.jobs)o[p.jobs[k]]=k;return o}
+  function statFor(p,job){const m=assigned(p)[job];return m?CREW.find(c=>c.id===m)[job]:0}
+  function capacity(p){
+    const b=statFor(p,"blend"),s=statFor(p,"serve"),c=statFor(p,"cash");
+    if(!b||!s||!c)return 0;
+    return Math.round(Math.min(b,s,c)*6*(.72+p.mood/100*.5)*p.speedMul);
+  }
+  const pullOf=p=>Math.max(2,8+p.sign*.45+(p.mood-50)*.08+p.attract);
+  function demandFor(p){const a=pullOf(p),b=pullOf(other(p));return Math.round(FOOT*a/(a+b))}
+  function award(p,n,why,quiet){
+    n=Math.round(n);p.pts+=n;p.bd.push({n,why});
+    if(!quiet&&n!==0)floatText((n>0?"+":"")+n+" "+why.toUpperCase(),n>0);
+    hud();
+  }
+  function slowName(p){
+    if(Object.keys(p.jobs).length<4)return "—";
+    const v=[["Blender",statFor(p,"blend")],["Server",statFor(p,"serve")],["Cashier",statFor(p,"cash")]];
+    v.sort((a,b)=>a[1]-b[1]);return v[0][0];
+  }
+  function truthOf(p){
+    const c={};p.log.slice(0,3).forEach(h=>c[h.lim]=(c[h.lim]||0)+1);
+    return Object.keys(c).sort((a,b)=>c[b]-c[a])[0];
+  }
+
+  /* ---- shell wiring ---- */
+  function hud(){
+    if(P.length<2)return;
+    document.getElementById("n1lab").textContent=P[0].name.toUpperCase().slice(0,10);
+    document.getElementById("n2lab").textContent=P[1].name.toUpperCase().slice(0,10);
+    document.getElementById("score1").textContent=P[0].pts;
+    document.getElementById("score2").textContent=P[1].pts;
+    document.getElementById("streak").textContent="x"+Math.max(P[0].streak,P[1].streak);
+  }
+  function setTime(s){
+    document.getElementById("timer").textContent="00:"+String(Math.max(0,s)).padStart(2,"0");
+    timerBox.classList.toggle("hot",s<=5);
+  }
+  function stopClock(){if(timer){clearInterval(timer);timer=null}}
+  function pauseTime(){stopClock();document.getElementById("timer").textContent="--:--";timerBox.classList.remove("hot")}
+  function clock(secs,onEnd){
+    stopClock();
+    const el=document.getElementById("tb");
+    const total=secs*1000;let left=total,last=Date.now();G.left=secs;setTime(secs);
+    timer=setInterval(()=>{
+      const now=Date.now();left-=now-last;last=now;
+      const s=Math.max(0,Math.ceil(left/1000));
+      if(s!==G.left&&s<=5&&s>0)sfx("tick");
+      G.left=s;setTime(s);
+      if(el){el.style.width=Math.max(0,left/total*100)+"%";el.className=left/total<.25?"hot":(left/total<.5?"warn":"")}
+      if(left<=0){stopClock();sfx("bad");onEnd()}
+    },100);
+  }
+  const tbar=()=>'<div class="tbar"><i id="tb" style="width:100%"></i></div>';
+  function speedPts(p){const s=Math.max(0,G.left||0);if(s>0)award(p,s*3,"quick thinking",true)}
+  function timeoutPen(p,why){p.timeouts++;award(p,-50,"clock ran out");p.bd[p.bd.length-1].why="Ran out of time: "+why}
+  function render(h){panel.innerHTML=h;panel.scrollTop=0;hud()}
+  const bind=(sel,fn)=>Array.prototype.forEach.call(panel.querySelectorAll(sel),fn);
+
+  /* ---- pictures ---- */
+  function face(c,mood,size){
+    let eyes,mouth;
+    if(mood>=70){eyes='<circle cx="26" cy="34" r="3.4"/><circle cx="48" cy="34" r="3.4"/>';mouth='<path d="M24 45 Q37 56 50 45" fill="none" stroke="#12233f" stroke-width="3.4" stroke-linecap="round"/>'}
+    else if(mood>=45){eyes='<circle cx="26" cy="34" r="3.4"/><circle cx="48" cy="34" r="3.4"/>';mouth='<path d="M26 48 H48" fill="none" stroke="#12233f" stroke-width="3.4" stroke-linecap="round"/>'}
+    else{eyes='<path d="M22 32 L30 36" stroke="#12233f" stroke-width="3" stroke-linecap="round"/><path d="M52 32 L44 36" stroke="#12233f" stroke-width="3" stroke-linecap="round"/>';mouth='<path d="M24 52 Q37 42 50 52" fill="none" stroke="#12233f" stroke-width="3.4" stroke-linecap="round"/>'}
+    const hair={
+      curl:'<circle cx="20" cy="16" r="9"/><circle cx="34" cy="10" r="10"/><circle cx="50" cy="16" r="9"/>',
+      bun:'<circle cx="37" cy="7" r="8"/><path d="M10 24 Q37 4 64 24 Z"/>',
+      cap:'<path d="M8 24 Q37 2 66 24 Z"/><rect x="4" y="22" width="40" height="6" rx="3"/>',
+      long:'<path d="M8 26 Q37 0 66 26 L66 54 Q56 34 37 34 Q18 34 8 54 Z"/>'
+    }[c.hair];
+    return '<svg viewBox="0 0 74 74" width="'+(size||64)+'" height="'+(size||64)+'" role="img" aria-label="'+c.n+'">'
+      +'<circle cx="37" cy="40" r="27" fill="#ffe0bd" stroke="#12233f" stroke-width="3"/>'
+      +'<g fill="'+c.hue+'" stroke="#12233f" stroke-width="3">'+hair+'</g>'
+      +'<g fill="#12233f">'+eyes+'</g>'+mouth+'</svg>';
+  }
+  function cupArt(x,y,s,fill){
+    return '<g transform="translate('+x+','+y+') scale('+s+')">'
+      +'<path d="M0 0 H30 L26 44 H4 Z" fill="'+fill+'" stroke="#12233f" stroke-width="3"/>'
+      +'<rect x="-3" y="-7" width="36" height="8" rx="4" fill="#fff" stroke="#12233f" stroke-width="3"/>'
+      +'<path d="M18 -7 L26 -26" stroke="#12233f" stroke-width="4" stroke-linecap="round"/></g>';
+  }
+  function twoStalls(q1,q2){
+    const st=(x,col,label,q,acc)=>{
+      let g='<g transform="translate('+x+',0)">'
+        +'<path d="M6 78 H180 L168 40 H18 Z" fill="'+col+'" stroke="#12233f" stroke-width="3"/>'
+        +'<path d="M50 78 L58 40 M96 78 L100 40 M142 78 L140 40" stroke="#fff" stroke-width="10"/>'
+        +'<path d="M6 78 H180 L168 40 H18 Z" fill="none" stroke="#12233f" stroke-width="3"/>'
+        +'<rect x="20" y="150" width="150" height="34" rx="6" fill="#e8b889" stroke="#12233f" stroke-width="3"/>'
+        +'<rect x="14" y="140" width="162" height="13" rx="6" fill="#fff" stroke="#12233f" stroke-width="3"/>'
+        +'<text x="95" y="106" font-size="15" font-family="Arial" font-weight="bold" text-anchor="middle" fill="#fff">'+label+'</text>'
+        +cupArt(58,110,.55,acc)+cupArt(110,110,.55,"#4ad16d");
+      for(let i=0;i<Math.min(4,q);i++){
+        g+='<g transform="translate('+(30+i*36)+',196)"><circle cx="0" cy="0" r="11" fill="#ffe0bd" stroke="#12233f" stroke-width="3"/>'
+          +'<path d="M-12 12 Q0 5 12 12 L12 30 H-12 Z" fill="'+["#8e4ee8","#4ad16d","#ff8418","#26c8ff"][i%4]+'" stroke="#12233f" stroke-width="3"/></g>';
+      }
+      return g+"</g>";
+    };
+    return '<div class="scene"><svg viewBox="0 0 420 240" role="img" aria-label="Two smoothie stalls at the fair">'
+      +'<circle cx="210" cy="26" r="18" fill="#ffd43b" stroke="#12233f" stroke-width="3"/>'
+      +st(6,"#0f66df",(P[0]?P[0].name:"P1").slice(0,9),q1,"#26c8ff")
+      +st(226,"#ff4d58",(P[1]?P[1].name:"P2").slice(0,9),q2,"#ff86ab")
+      +'<rect x="0" y="222" width="420" height="18" fill="#4ad16d" stroke="#12233f" stroke-width="3"/></svg></div>';
+  }
+  function meterRow(label,v,cls){
+    return '<div class="meterrow"><b>'+label+'</b><div class="meter '+(cls||"")+'"><i style="width:'+Math.max(0,Math.min(100,v))+'%"></i></div>'
+      +'<span style="min-width:34px;text-align:right;font-weight:900">'+Math.round(v)+'</span></div>';
+  }
+
+  /* ---- flow ---- */
+  function startGame(cpu){
+    const n1=(document.getElementById("n1").value||"Player 1").slice(0,12);
+    const n2=cpu?"Coach 🤖":(document.getElementById("n2").value||"Player 2").slice(0,12);
+    P=[mk(0,n1,false),mk(1,n2,cpu)];
+    if(cpu){
+      const b=BOTPLANS[Math.floor(Math.random()*BOTPLANS.length)];
+      Object.assign(P[1],{ing:b.ing,sign:b.sign,target:b.target,jobs:b.jobs,botPicks:b.picks,spent:b.ing+b.sign,money:MONEY-b.ing-b.sign});
+      award(P[1],90,"coach thinks fast",true);
+    }
+    G={hour:0,running:true};
+    learnScreen.classList.add("hidden");instructionScreen.classList.add("hidden");endScreen.classList.add("hidden");
+    initAudio();musicStart();hud();sfx("select");
+    planPass(0);
+  }
+  function pass(p,label,next){
+    if(p.bot){next();return}
+    pauseTime();
+    render('<div class="gcard '+(p.i===0?"one":"two")+' pass"><div class="eyes">🙈</div>'
+      +'<div class="who">'+p.name+'</div><p class="dim">'+label+'</p>'
+      +'<button class="start" id="ready">I am '+p.name+' — start ⏱️</button></div>');
+    document.getElementById("ready").onclick=()=>{sfx("select");next()};
+  }
+  function planPass(i){
+    if(i>1){orgPass(0);return}
+    if(P[i].bot){planPass(i+1);return}
+    pass(P[i],"Step 1 of 4 · make your secret plan",()=>plan(i));
+  }
+  function plan(i){
+    const p=P[i];
+    render('<div class="gcard '+(i===0?"one":"two")+'"><h2>🗓️ '+p.name+' — your plan</h2>'+tbar()
+      +'<p class="dim">Spend $'+MONEY+'. Fruit makes cups. The sign pulls the crowd away from your rival. Anything left is emergency money.</p>'
+      +'<div class="sl"><label for="ing">🍓 Fruit <i id="n_ing">$'+p.ing+'</i></label>'
+      +'<input type="range" id="ing" min="0" max="100" step="10" value="'+p.ing+'">'
+      +'<div class="hint">$1 of fruit = 1 cup, and every cup sells for $'+PRICE+'. Stock: <b id="h1">'+stock(p)+' cups</b></div></div>'
+      +'<div class="sl"><label for="sign">🎨 Sign and decorations <i id="n_sig">$'+p.sign+'</i></label>'
+      +'<input type="range" id="sign" min="0" max="60" step="10" value="'+p.sign+'">'
+      +'<div class="hint">'+FOOT+' customers walk past every hour and choose one stall. A bigger sign than theirs means more of them choose you.</div></div>'
+      +'<div class="sl"><label for="tg">🎯 Your goal <i id="n_tg">'+p.target+' cups</i></label>'
+      +'<input type="range" id="tg" min="20" max="100" step="5" value="'+p.target+'">'
+      +'<div class="hint">Within 5 cups at the end = 200 points.</div></div>'
+      +'<div class="grid4"><div class="kpi"><small>Fruit</small><strong id="v1">$'+p.ing+'</strong></div>'
+      +'<div class="kpi"><small>Sign</small><strong id="v2">$'+p.sign+'</strong></div>'
+      +'<div class="kpi"><small>Spare cash</small><strong id="v3">$'+(MONEY-p.ing-p.sign)+'</strong></div>'
+      +'<div class="kpi"><small>Goal</small><strong id="v4">'+p.target+'</strong></div></div>'
+      +'<div class="navRow"><button class="start" id="lock">LOCK IT IN ✅</button></div></div>');
+    const sync=()=>{
+      if(p.ing+p.sign>MONEY){const o=p.ing+p.sign-MONEY;if(p.sign>=o)p.sign-=o;else p.ing-=o;
+        document.getElementById("ing").value=p.ing;document.getElementById("sign").value=p.sign}
+      document.getElementById("n_ing").textContent="$"+p.ing;document.getElementById("v1").textContent="$"+p.ing;
+      document.getElementById("n_sig").textContent="$"+p.sign;document.getElementById("v2").textContent="$"+p.sign;
+      document.getElementById("n_tg").textContent=p.target+" cups";document.getElementById("v4").textContent=p.target;
+      document.getElementById("v3").textContent="$"+(MONEY-p.ing-p.sign);
+      document.getElementById("h1").textContent=stock(p)+" cups";
+    };
+    document.getElementById("ing").oninput=function(){p.ing=+this.value;sync()};
+    document.getElementById("sign").oninput=function(){p.sign=+this.value;sync()};
+    document.getElementById("tg").oninput=function(){p.target=+this.value;sync()};
+    const done=late=>{stopClock();p.spent=p.ing+p.sign;p.money=MONEY-p.spent;
+      if(late)timeoutPen(p,"planning");else{speedPts(p);sfx("ok")}
+      planPass(i+1)};
+    document.getElementById("lock").onclick=()=>done(false);
+    clock(T*2,()=>done(true));
+  }
+  function orgPass(i){
+    if(i>1){G.hour=0;hourRun();return}
+    if(P[i].bot){orgPass(i+1);return}
+    pass(P[i],"Step 2 of 4 · give your crew their jobs",()=>org(i));
+  }
+  function org(i){
+    const p=P[i],a=assigned(p),done=Object.keys(p.jobs).length===4;
+    render('<div class="gcard '+(i===0?"one":"two")+'"><h2>👥 '+p.name+' — who does what?</h2>'+tbar()
+      +'<p class="dim">Blend ➜ serve ➜ pay. The queue moves at the speed of your <b>slowest</b> of those three.</p>'
+      +'<div class="crew">'+CREW.map(c=>{
+        const j=p.jobs[c.id]?JOBS.find(x=>x.k===p.jobs[c.id]):null;
+        return '<div class="mate">'+face(c,p.mood)+'<div class="nm">'+c.n+'</div>'
+          +'<div class="jb">'+(j?j.e+" "+j.n.toUpperCase():"no job")+'</div>'
+          +'<div class="stats">'+JOBS.map(x=>x.e+" "+"★".repeat(c[x.k])).join("<br>")+'</div>'
+          +'<div class="jobs">'+JOBS.map(x=>{
+            const taken=a[x.k]&&a[x.k]!==c.id;
+            return '<button data-c="'+c.id+'" data-j="'+x.k+'" class="'+(p.jobs[c.id]===x.k?"on":"")+'"'+(taken?" disabled":"")+' aria-label="'+c.n+' on '+x.n+'">'+x.e+'</button>'}).join("")
+          +'</div></div>'}).join("")+'</div>'
+      +'<div class="grid4" style="margin-top:12px">'
+      +'<div class="kpi"><small>Cups per hour</small><strong>'+(capacity(p)||"—")+'</strong></div>'
+      +'<div class="kpi"><small>Slowest job</small><strong style="font-size:17px">'+slowName(p)+'</strong></div>'
+      +'<div class="kpi"><small>Your stock</small><strong>'+stock(p)+'</strong></div>'
+      +'<div class="kpi"><small>Your pull</small><strong>'+Math.round(pullOf(p))+'</strong></div></div>'
+      +'<div class="navRow"><button class="start" id="open"'+(done?"":" disabled")+'>READY 🎉</button></div></div>');
+    bind("[data-c]",b=>b.onclick=()=>{
+      const c=b.dataset.c,j=b.dataset.j;
+      if(p.jobs[c]===j)delete p.jobs[c];else p.jobs[c]=j;
+      sfx("select");org(i);
+    });
+    if(done)document.getElementById("open").onclick=()=>{stopClock();speedPts(p);sfx("ok");orgPass(i+1)};
+    clock(T*2,()=>{
+      stopClock();
+      if(Object.keys(p.jobs).length<4){p.jobs={};CREW.forEach((c,k)=>p.jobs[c.id]=JOBS[k].k)}
+      timeoutPen(p,"picking jobs");orgPass(i+1);
+    });
+  }
+  function hourRun(){
+    P.forEach(p=>{
+      const cap=capacity(p),dem=demandFor(p),left=stock(p)-p.cups;
+      const sold=Math.max(0,Math.min(cap,dem,left));
+      const lim=(left<=0||sold===left)?"stock":(sold===cap?"speed":"demand");
+      p.cups+=sold;p.money+=sold*PRICE;p.lastSold=sold;
+      p.log.push({h:G.hour+1,sold,cap,dem,left:Math.max(0,left),lim});
+      award(p,sold*10,"cups sold",true);
+    });
+    const a=P[0].lastSold,b=P[1].lastSold;
+    if(a>b){P[0].streak++;P[1].streak=0;award(P[0],200+50*(P[0].streak-1),"won hour "+(G.hour+1),true);showStreak(P[0].streak)}
+    else if(b>a){P[1].streak++;P[0].streak=0;award(P[1],200+50*(P[1].streak-1),"won hour "+(G.hour+1),true);showStreak(P[1].streak)}
+    else{P.forEach(p=>{p.streak=0;award(p,100,"drew hour "+(G.hour+1),true)})}
+    G.hour++;hourReport();
+  }
+  function hourReport(){
+    const a=P[0],b=P[1],w=a.lastSold>b.lastSold?0:(b.lastSold>a.lastSold?1:-1);
+    pauseTime();sfx("ok");
+    render('<div class="gcard pop"><h2>⏰ End of hour '+G.hour+' of '+HOURS+'</h2>'
+      +'<div class="vs"><div class="side one'+(w===0?" won":"")+'"><b>'+(w===0?"👑 ":"")+a.name+'</b><strong>'+a.lastSold+'</strong><small>cups this hour</small></div>'
+      +'<div class="mid">VS</div>'
+      +'<div class="side two'+(w===1?" won":"")+'"><b>'+(w===1?"👑 ":"")+b.name+'</b><strong>'+b.lastSold+'</strong><small>cups this hour</small></div></div>'
+      +twoStalls(Math.round(a.lastSold/6),Math.round(b.lastSold/6))
+      +'<div class="grid2" style="margin-top:12px">'+P.map(p=>
+        '<div class="kpi" style="text-align:left"><small>'+p.name+'</small>'
+        +'<div style="font-size:13.5px;margin:4px 0">'+p.cups+' cups total · $'+Math.round(p.money)+' in the till · '+Math.max(0,stock(p)-p.cups)+' cups of stock left</div>'
+        +meterRow("Crew mood",p.mood,p.mood>=70?"":p.mood>=45?"q":"r")+'</div>').join("")+'</div>'
+      +'<div class="navRow"><button class="start" id="next">'+(G.hour<HOURS?"HOUR "+(G.hour+1)+" SURPRISE ➜":"DETECTIVE TIME 🔍")+'</button></div></div>');
+    document.getElementById("next").onclick=()=>{sfx("select");G.hour<=EVENTS.length?evPass(0):detPass(0)};
+  }
+  function applyEv(p,o){
+    p.mood=Math.max(5,Math.min(100,p.mood+(o.mood||0)));
+    p.speedMul*=(o.speed||1);
+    if(o.attract)p.attract+=o.attract;
+    if(o.cost){p.money-=o.cost;p.spent+=o.cost}
+  }
+  function evPass(i){
+    if(i>1){hourRun();return}
+    if(P[i].bot){applyEv(P[i],EVENTS[G.hour-1].o[(P[i].botPicks&&P[i].botPicks[G.hour-1])||0]);award(P[i],45,"coach answers fast",true);evPass(i+1);return}
+    pass(P[i],"Hour "+G.hour+" · your move",()=>evAsk(i));
+  }
+  function evAsk(i){
+    const p=P[i],e=EVENTS[G.hour-1],who=CREW.find(c=>c.id===e.who);
+    render('<div class="gcard '+(i===0?"one":"two")+'"><h2>Hour '+G.hour+' — '+p.name+'</h2>'+tbar()
+      +'<div style="display:flex;gap:12px;align-items:center"><div>'+face(who,p.mood,72)+'</div>'
+      +'<p style="flex:1;font-size:17px;margin:0"><b style="color:var(--yellow)">'+who.n+' '+e.e+'</b><br>'+e.t+'</p></div>'
+      +'<div style="margin-top:12px">'+e.o.map((o,k)=>{
+        const locked=o.cost&&o.cost>p.money;
+        return '<button class="opt" data-k="'+k+'"'+(locked?" disabled":"")+'><span class="ico">'+o.ic+'</span><span>'+o.l
+          +'<small>'+(locked?"No spare cash for $"+o.cost:o.s)+'</small></span></button>'}).join("")+'</div>'
+      +'<p class="dim" style="margin:6px 0 0">Every second left on the clock is 3 points.</p></div>');
+    bind("[data-k]",b=>b.onclick=()=>{
+      stopClock();const o=EVENTS[G.hour-1].o[+b.dataset.k];
+      applyEv(p,o);speedPts(p);sfx(o.mood>0?"ok":"select");evPass(i+1);
+    });
+    clock(T,()=>{applyEv(p,{mood:-10,speed:.85,attract:-4});timeoutPen(p,"hour "+G.hour);evPass(i+1)});
+  }
+  function detPass(i){
+    if(i>1){fixPass(0);return}
+    if(P[i].bot){P[i].diag=truthOf(P[i]);award(P[i],150,"coach found the problem",true);award(P[i],60,"coach answers fast",true);detPass(i+1);return}
+    pass(P[i],"Step 4 of 4 · find your own weak link",()=>detect(i));
+  }
+  function detect(i){
+    const p=P[i],t=truthOf(p);
+    render('<div class="gcard '+(i===0?"one":"two")+'"><h2>🔍 '+p.name+' — what held you back?</h2>'+tbar()
+      +'<p class="dim">Every hour you sold the <b>smallest</b> of these three numbers. Your goal was '+p.target+' cups and you are on <b>'+p.cups+'</b>.</p>'
+      +'<table class="gt"><tr><th>Hour</th><th>Could make</th><th>Came to you</th><th>Stock left</th><th>Sold</th></tr>'
+      +p.log.map(h=>'<tr><td>'+h.h+'</td><td>'+h.cap+'</td><td>'+h.dem+'</td><td>'+h.left+'</td><td><b style="color:var(--yellow)">'+h.sold+'</b></td></tr>').join("")+'</table>'
+      +'<div style="margin-top:12px">'+CULPRITS.map(c=>'<button class="opt" data-k="'+c.k+'"><span class="ico">'+c.ic+'</span><span>'+c.l+'</span></button>').join("")+'</div>'
+      +'<p id="fb" style="font-weight:900;min-height:24px;margin:6px 0 0"></p>'
+      +'<div class="navRow" id="nextRow" style="display:none"><button class="start" id="nx">NEXT ➜</button></div></div>');
+    bind("[data-k]",b=>b.onclick=()=>{
+      const k=b.dataset.k,c=CULPRITS.find(x=>x.k===k),fb=document.getElementById("fb");
+      if(k===t){
+        stopClock();b.className="opt right";p.diag=k;
+        const base=p.tries===0?150:(p.tries===1?60:0);
+        if(base)award(p,base,p.tries===0?"right first try":"right diagnosis",true);
+        speedPts(p);sfx("ok");
+        fb.innerHTML='<span style="color:var(--green)">✅ '+c.why+'</span>';
+        bind("[data-k]",x=>x.disabled=true);
+        document.getElementById("nextRow").style.display="flex";
+        document.getElementById("nx").onclick=()=>{sfx("select");detPass(i+1)};
+      }else{
+        b.className="opt wrong";b.disabled=true;p.tries++;sfx("bad");
+        fb.innerHTML='<span style="color:var(--red)">❌ Not the main one. In most hours that was not the smallest number.</span>';
+      }
+    });
+    clock(T+8,()=>{timeoutPen(p,"diagnosis");detPass(i+1)});
+  }
+  function applyFix(p,k){
+    p.fix=k;
+    if(k==="stock"&&p.money>=12){p.extraStock+=20;p.money-=12;p.spent+=12}
+    if(k==="speed")p.speedMul*=1.35;
+    if(k==="demand"){p.attract+=7;p.speedMul*=.96}
+  }
+  function fixPass(i){
+    if(i>1){finalHour();return}
+    if(P[i].bot){applyFix(P[i],truthOf(P[i]));award(P[i],40,"coach fixed it fast",true);fixPass(i+1);return}
+    pass(P[i],"Last hour · pick your fix",()=>fix(i));
+  }
+  function fix(i){
+    const p=P[i];
+    render('<div class="gcard '+(i===0?"one":"two")+'"><h2>🔧 '+p.name+' — one hour left</h2>'+tbar()
+      +'<p class="dim">You have $'+Math.round(p.money)+'. Matching your fix to your real problem is worth 100 points.</p>'
+      +FIXES.map(f=>{const locked=f.need&&f.need>p.money;
+        return '<button class="opt" data-f="'+f.k+'"'+(locked?" disabled":"")+'><span class="ico">'+f.ic+'</span><span>'+f.l
+          +'<small>'+(locked?"You need $"+f.need:f.d)+'</small></span></button>'}).join("")
+      +'</div>');
+    bind("[data-f]",b=>b.onclick=()=>{stopClock();applyFix(p,b.dataset.f);speedPts(p);sfx("select");fixPass(i+1)});
+    clock(T,()=>{applyFix(p,"speed");timeoutPen(p,"the fix");fixPass(i+1)});
+  }
+  function finalHour(){
+    P.forEach(p=>{
+      const cap=capacity(p),dem=demandFor(p),left=stock(p)-p.cups;
+      const sold=Math.max(0,Math.min(cap,dem,left));
+      p.cups+=sold;p.money+=sold*PRICE;p.lastSold=sold;
+      p.log.push({h:4,sold,cap,dem,left:Math.max(0,left),lim:"final"});
+      award(p,sold*10,"final hour cups",true);
+      if(p.fix===truthOf(p))award(p,100,"fix matched the problem",true);
+      const profit=Math.round(p.money-MONEY);
+      award(p,profit*2,"profit $"+profit,true);
+      const gap=Math.abs(p.cups-p.target);
+      if(gap<=5)award(p,200,"goal within 5 cups",true);
+      else if(gap<=12)award(p,100,"goal within 12 cups",true);
+      if(p.mood>=70)award(p,120,"happy crew",true);
+      p.profit=profit;
+    });
+    const a=P[0].lastSold,b=P[1].lastSold;
+    if(a>b)award(P[0],200,"won the final hour",true);else if(b>a)award(P[1],200,"won the final hour",true);
+    endGame();
+  }
+  function rankFor(pts){let r=RANKS[0][1];RANKS.forEach(x=>{if(pts>=x[0])r=x[1]});return r}
+  function endGame(){
+    G.running=false;pauseTime();musicStop();
+    const w=P[0].pts===P[1].pts?-1:(P[0].pts>P[1].pts?0:1);
+    const top=Math.max(P[0].pts,P[1].pts);
+    if(top>best){best=top;try{localStorage.setItem(BESTKEY,best)}catch(e){}}
+    document.getElementById("best").textContent=best;
+    document.getElementById("resultText").innerHTML=w<0
+      ? "Dead heat! Both stalls scored <b>"+P[0].pts+"</b> points."
+      : "<b>"+P[w].name+"</b> wins with <b>"+P[w].pts+"</b> points to "+P[1-w].pts+".";
+    document.getElementById("rankText").textContent="🏅 "+rankFor(top)+(w<0?"":" — "+P[w].name);
+    document.getElementById("resultDetail").innerHTML=
+      '<p class="subtitle">'+P.map(p=>p.name+": "+p.cups+" cups · $"+p.profit+" profit · "+p.pts+" pts").join("<br>")+"</p>"
+      +'<p class="subtitle">High score on this tablet: '+best+"</p>";
+    endScreen.classList.remove("hidden");confetti();sfx("ok");
+    review();
+  }
+  function review(){
+    const w=P[0].pts===P[1].pts?-1:(P[0].pts>P[1].pts?0:1);
+    const rows=p=>{
+      const m={},order=[];
+      p.bd.forEach(x=>{if(!(x.why in m)){m[x.why]=0;order.push(x.why)}m[x.why]+=x.n});
+      return order.map(k=>'<tr><td>'+k+'</td><td style="color:'+(m[k]<0?"var(--red)":"#fff")+'">'+(m[k]>0?"+":"")+m[k]+'</td></tr>').join("")
+        +'<tr class="tot"><td>TOTAL</td><td>'+p.pts+'</td></tr>';
+    };
+    render('<div class="gcard"><h2>'+(w<0?"🤝 Dead heat":"🏆 "+P[w].name+" wins")+'</h2>'
+      +twoStalls(w===0?5:1,w===1?5:1)+'</div>'
+      +'<div class="grid2">'+P.map((p,i)=>
+        '<div class="gcard '+(i===0?"one":"two")+'"><h3 style="margin-top:0">'+(w===i?"👑 ":"")+p.name+' — '+p.pts+' pts</h3>'
+        +'<div class="grid4" style="margin-bottom:8px">'
+        +'<div class="kpi"><small>Cups</small><strong>'+p.cups+'</strong></div>'
+        +'<div class="kpi"><small>Goal</small><strong>'+p.target+'</strong></div>'
+        +'<div class="kpi"><small>Profit</small><strong style="font-size:20px;color:'+(p.profit>=0?"var(--green)":"var(--red)")+'">$'+p.profit+'</strong></div>'
+        +'<div class="kpi"><small>Mood</small><strong>'+(p.mood>=70?"😄":p.mood>=45?"🙂":"😞")+'</strong></div></div>'
+        +'<table class="gt">'+rows(p)+'</table></div>').join("")+'</div>'
+      +'<div class="gcard"><h3 style="margin-top:0">Why it went that way 📋</h3>'
+      +P.map(p=>{
+        const t=truthOf(p);
+        return '<p><b style="color:var(--yellow)">'+p.name+'.</b> Slowest job was <b>'+slowName(p)+'</b>, so that set the queue speed. '
+          +'Your weak link was <b>'+CULPRITS.find(c=>c.k===t).l.toLowerCase()+'</b>'+(p.diag===t?" and you found it":" and you missed it")
+          +'. Crew mood ended at '+p.mood+'/100'+(p.timeouts?", and the clock beat you "+p.timeouts+" time(s)":"")+'.</p>'}).join("")
+      +'<p class="dim">'+FOOT+' customers walked past every hour and each one chose a stall. '
+      +P[0].name+'&rsquo;s pull was '+Math.round(pullOf(P[0]))+' and '+P[1].name+'&rsquo;s was '+Math.round(pullOf(P[1]))+'.</p>'
+      +'<h3>Talk about it 💬</h3>'
+      +'<p class="dim">1. Who spent more on their sign, and did stealing customers pay off?<br>'
+      +'2. Did the winner sell more cups, or just lose less to the clock?<br>'
+      +'3. Which of the four manager jobs decided this game?</p></div>');
+  }
+
+  /* ---- controls ---- */
+  document.getElementById("startBtn").onclick=()=>startGame(false);
+  document.getElementById("startCpuBtn").onclick=()=>startGame(true);
+  document.getElementById("againBtn").onclick=()=>{endScreen.classList.add("hidden");instructionScreen.classList.remove("hidden")};
+  document.getElementById("reviewBtn").onclick=()=>{endScreen.classList.add("hidden");review()};
+  document.getElementById("musicBtn").onclick=function(){musicOn=!musicOn;this.textContent=musicOn?"♫":"♩";if(musicOn&&G.running)musicStart();else musicStop()};
+  document.getElementById("soundBtn").onclick=function(){soundOn=!soundOn;this.textContent=soundOn?"🔊":"🔇"};
+  document.getElementById("fullBtn").onclick=()=>{if(!document.fullscreenElement)document.documentElement.requestFullscreen?.();else document.exitFullscreen?.()};
+  pauseTime();
+})();
+</script>
+</body>
+</html>
