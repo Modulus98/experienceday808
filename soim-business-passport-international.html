@@ -343,6 +343,7 @@ html, body { overscroll-behavior:none; }
 </head>
 <body>
 <div class="game" id="game">
+  <audio id="bgm" src="music.mp3" loop preload="auto"></audio>
   <header class="topbar">
     <div class="brand"><div class="logo" role="img" aria-label="ViTrox College"></div></div>
     <div class="titlebox">
@@ -582,23 +583,19 @@ html, body { overscroll-behavior:none; }
     if(type==="tick"){tone(900,.03,"square",.02)}
   }
   function musicStart(){
-    musicStop(); if(!musicOn) return; initAudio(); if(!audioCtx) return;
-    const STEP=0.25;                                  /* 16 steps = one 4s bar */
-    const BASS=[65.4,65.4,87.3,98.0, 82.4,82.4,73.4,65.4];      /* C2 C2 F2 G2 / E2 E2 D2 C2 */
-    const LEAD=[523,659,784,659, 587,523,440,494, 523,659,880,784, 659,587,523,392];
-    const bar=()=>{
-      if(!musicOn) return;
-      for(let i=0;i<8;i++) tone(BASS[(beat*8+i)%BASS.length], .34, "triangle", .030, i*STEP*2);
-      for(let i=0;i<16;i++){
-        if(i%2===0 || i%8===3) tone(LEAD[(beat*16+i)%LEAD.length], .17, "triangle", .019, i*STEP);
-      }
-      for(let i=1;i<16;i+=4) tone(2400, .02, "square", .007, i*STEP);
-      beat++;
-    };
-    bar();
-    musicTimer=setInterval(bar, 3980);
+    const a=document.getElementById("bgm");
+    if(!a || !musicOn) return;
+    a.loop=true; a.volume=0.5;
+    try{ const p=parseFloat(localStorage.getItem("soimMusicPos")||"0");
+         if(p>0 && a.duration && p < a.duration-0.25) a.currentTime=p; }catch(e){}
+    const pr=a.play(); if(pr && pr.catch) pr.catch(()=>{});
   }
-  function musicStop(){clearInterval(musicTimer);musicTimer=null}
+  function musicStop(){
+    const a=document.getElementById("bgm");
+    if(!a) return;
+    try{ localStorage.setItem("soimMusicPos", String(a.currentTime||0)); }catch(e){}
+    a.pause();
+  }
 
   /* ---- feedback (house pattern) ---- */
   function floatText(text,good){
@@ -785,7 +782,11 @@ html, body { overscroll-behavior:none; }
     const kick=()=>{ initAudio(); if(musicOn) musicStart();
       window.removeEventListener("pointerdown",kick); window.removeEventListener("keydown",kick); };
     window.addEventListener("pointerdown",kick); window.addEventListener("keydown",kick);
-    setInterval(()=>{ if(musicOn && !musicTimer && audioCtx) musicStart(); }, 1500);
+    setInterval(()=>{
+      const a=document.getElementById("bgm"); if(!a) return;
+      if(musicOn && a.paused) musicStart();
+      if(musicOn && !a.paused){ try{ localStorage.setItem("soimMusicPos", String(a.currentTime||0)); }catch(e){} }
+    }, 1500);
   })();
 })();
 </script>
