@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Boba Wars | ViTrox College SoIM</title>
+<style>
+:root {
+  --navy:#071f4b; --navy2:#0b3478; --blue:#0f66df; --cyan:#26c8ff;
+  --yellow:#ffd43b; --orange:#ff8418; --green:#4ad16d; --purple:#8e4ee8;
+  --red:#ff4d58; --white:#fff; --ink:#12233f;
+  --p1:#26c8ff; --p2:#ff86ab;
+}
+* { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body { margin:0; width:100%; height:100%; overflow:hidden; font-family:Arial,Helvetica,sans-serif; background:#061a3c; }
+button { font:inherit; }
+.game {
+  width:100vw; height:100vh; position:relative; overflow:hidden; color:white;
+  background:
+    linear-gradient(rgba(4,24,55,.56),rgba(4,24,55,.66)),
+    radial-gradient(circle at 50% 10%,#2e75b9 0,#19395e 35%,#0b213d 75%);
+}
+.game:before {
+  content:""; position:absolute; inset:0; opacity:.16; pointer-events:none;
+  background:repeating-linear-gradient(90deg,transparent 0 72px,#fff 73px 74px),
+             repeating-linear-gradient(0deg,transparent 0 72px,#fff 73px 74px);
+}
+.topbar {
+  height:112px; display:grid; grid-template-columns:280px 1fr 245px 232px;
+  gap:14px; align-items:center; padding:12px 24px; position:relative; z-index:10;
+  background:linear-gradient(180deg,#092861,#071b43);
+  border-bottom:4px solid #0e69ee; box-shadow:0 8px 24px #0008;
+}
+.brand { display:flex; align-items:center; }
+.brand img { width:235px; max-height:84px; object-fit:contain; filter:drop-shadow(0 6px 10px #0008); }
+.brand .fallback { font-size:22px; font-weight:1000; color:var(--yellow); line-height:1.05; }
+.titlebox { text-align:center; line-height:.88; text-shadow:0 7px 0 #001438,0 12px 18px #000; }
+.titlebox .small { font-size:clamp(18px,2.2vw,30px); font-weight:1000; color:#fff; }
+.titlebox .big { font-size:clamp(32px,4.6vw,64px); font-weight:1000; color:var(--yellow); letter-spacing:-2px; }
+.titlebox .tag { display:inline-block; margin-top:7px; padding:6px 18px; border-radius:999px; background:#0f60d2; font-weight:900; font-size:15px; }
+.soim { padding:14px; border:3px solid #5073a8; border-radius:22px; text-align:center; background:#0b2857; box-shadow:inset 0 0 18px #0007; }
+.soim strong { font-size:32px; color:var(--yellow); display:block; }
+.soim span { font-size:12px; font-weight:800; }
+.controls { display:flex; gap:10px; justify-content:flex-end; }
+.circle {
+  width:50px; height:50px; border-radius:50%; border:2px solid #7fb5ff; cursor:pointer;
+  background:linear-gradient(#153d7f,#071c43); color:white; font-size:24px; box-shadow:0 6px 0 #020b1b;
+}
+
+/* ===== STATUS STRIP ===== */
+.status {
+  height:92px; display:grid; grid-template-columns:240px 1fr 330px; align-items:center; gap:18px;
+  padding:10px 22px; position:relative; z-index:9;
+}
+.timerbox,.scorebox,.howto {
+  background:#061d43e8; border:3px solid #1766c5; border-radius:22px; box-shadow:0 10px 18px #0006;
+}
+.timerbox { padding:10px 18px; text-align:center; }
+.timerbox b { display:block; font-size:17px; }
+.timerbox span { font-size:42px; font-weight:1000; color:var(--yellow); }
+.timerbox.hot span { color:var(--red); }
+.scorebox { display:grid; grid-template-columns:repeat(4,1fr); text-align:center; padding:11px; }
+.scorebox div+div { border-left:1px solid #3d72b5; }
+.scorebox small { display:block; font-weight:900; font-size:13px; }
+.scorebox strong { font-size:30px; color:var(--yellow); }
+.scorebox .one strong { color:var(--p1); }
+.scorebox .two strong { color:var(--p2); }
+.scorebox .combo strong { color:#c47cff; }
+.scorebox .best strong { color:#8fe36b; }
+.howto { padding:10px 16px; font-size:14px; line-height:1.35; }
+.howto h3 { margin:0 0 4px; color:var(--yellow); text-align:center; }
+.main {
+  position:absolute; left:18px; right:18px; top:204px; bottom:18px;
+}
+.panel { position:absolute; inset:0; overflow-y:auto; padding:2px 4px 10px; }
+
+/* ===== IN-GAME PANELS (house style) ===== */
+.gcard {
+  background:#061d43e8; border:3px solid #1766c5; border-radius:22px; box-shadow:0 10px 18px #0006;
+  padding:16px 18px; margin-bottom:12px;
+}
+.gcard.one { border-color:var(--p1); }
+.gcard.two { border-color:var(--p2); }
+.gcard h2 { margin:0 0 8px; font-size:clamp(20px,3vw,28px); color:var(--yellow); }
+.gcard h3 { margin:14px 0 6px; font-size:17px; color:var(--cyan); }
+.gcard p { margin:0 0 10px; font-size:15px; line-height:1.45; }
+.dim { color:#a8c4e8; }
+.tbar { height:14px; background:#0a2c5e; border:2px solid #1766c5; border-radius:999px; overflow:hidden; margin:4px 0 12px; }
+.tbar i { display:block; height:100%; background:var(--green); transition:width .12s linear; }
+.tbar i.warn { background:var(--yellow); } .tbar i.hot { background:var(--red); }
+.grid4 { display:grid; grid-template-columns:repeat(auto-fit,minmax(122px,1fr)); gap:10px; }
+.grid2 { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:12px; }
+.kpi { background:#0a2c5e; border:2px solid #2f6fbe; border-radius:16px; padding:8px 10px; text-align:center; }
+.kpi small { display:block; font-size:11.5px; font-weight:900; color:#a8c4e8; text-transform:uppercase; }
+.kpi strong { font-size:26px; color:var(--yellow); }
+.sl { margin-bottom:14px; }
+.sl label { display:flex; justify-content:space-between; align-items:baseline; gap:10px; font-weight:900; font-size:16px; margin-bottom:4px; }
+.sl label i { font-style:normal; color:var(--yellow); font-size:19px; }
+.sl .hint { font-size:12.5px; color:#a8c4e8; margin-top:2px; }
+input[type=range] { -webkit-appearance:none; appearance:none; width:100%; height:30px; background:transparent; cursor:pointer; margin:0; }
+input[type=range]::-webkit-slider-runnable-track { height:12px; background:#0a2c5e; border:2px solid #2f6fbe; border-radius:999px; }
+input[type=range]::-moz-range-track { height:12px; background:#0a2c5e; border:2px solid #2f6fbe; border-radius:999px; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:26px; height:26px; margin-top:-9px; border-radius:50%; background:var(--yellow); border:3px solid #071f4b; }
+input[type=range]::-moz-range-thumb { width:26px; height:26px; border-radius:50%; background:var(--yellow); border:3px solid #071f4b; }
+input[type=text] { font:inherit; font-weight:900; padding:10px 12px; border-radius:14px; border:3px solid #2f6fbe; background:#0a2c5e; color:#fff; width:100%; }
+.opt {
+  display:flex; gap:12px; align-items:flex-start; width:100%; text-align:left; cursor:pointer;
+  background:linear-gradient(#0e4a95,#0a2c5e); color:#fff; border:3px solid #2f6fbe; border-radius:18px;
+  padding:12px 14px; margin-bottom:9px; box-shadow:0 6px 0 #051c3d; font-size:15.5px; font-weight:700; line-height:1.35;
+}
+.opt:hover { filter:brightness(1.12); }
+.opt:active { transform:translateY(4px); box-shadow:0 2px 0 #051c3d; }
+.opt .ico { font-size:27px; line-height:1; }
+.opt small { display:block; font-weight:400; color:#bcd6f5; font-size:13px; margin-top:3px; }
+.opt.sel { border-color:var(--yellow); background:linear-gradient(#155ab4,#0d3a76); }
+.opt.right { border-color:var(--green); background:linear-gradient(#17703f,#0d4527); }
+.opt.wrong { border-color:var(--red); background:linear-gradient(#8c2029,#4d1218); }
+.opt[disabled] { opacity:.45; cursor:not-allowed; }
+.crew { display:grid; grid-template-columns:repeat(auto-fit,minmax(152px,1fr)); gap:10px; }
+.mate { background:#0a2c5e; border:3px solid #2f6fbe; border-radius:18px; padding:9px; text-align:center; }
+.mate .nm { font-size:18px; font-weight:1000; color:#fff; }
+.mate .jb { font-size:12px; font-weight:900; color:var(--yellow); min-height:16px; }
+.mate svg { width:64px; height:64px; display:block; margin:0 auto; }
+.mate .stats { font-size:11.5px; text-align:left; color:#bcd6f5; margin:4px 0; }
+.jobs { display:flex; gap:4px; justify-content:center; flex-wrap:wrap; }
+.jobs button { font-size:13px; padding:4px 8px; border-radius:11px; border:2px solid #7fb5ff; background:#123c7c; color:#fff; cursor:pointer; box-shadow:0 3px 0 #051c3d; }
+.jobs button.on { background:var(--green); color:#04240f; border-color:#bff3cd; }
+.jobs button[disabled] { opacity:.35; cursor:not-allowed; }
+.vs { display:grid; grid-template-columns:1fr auto 1fr; gap:12px; align-items:center; margin:8px 0 4px; }
+.vs .side { background:#0a2c5e; border:3px solid #2f6fbe; border-radius:18px; padding:12px 8px; text-align:center; }
+.vs .side.one { border-color:var(--p1); } .vs .side.two { border-color:var(--p2); }
+.vs .side.won { background:linear-gradient(#17703f,#0d4527); border-color:var(--green); }
+.vs .side b { display:block; font-size:16px; }
+.vs .side strong { display:block; font-size:44px; color:var(--yellow); line-height:1; }
+.vs .side small { color:#bcd6f5; font-size:12px; }
+.vs .mid { font-size:22px; font-weight:1000; color:#a8c4e8; }
+.meterrow { display:flex; align-items:center; gap:8px; margin:6px 0; }
+.meterrow b { min-width:86px; font-size:13px; }
+.meter { flex:1; height:14px; background:#0a2c5e; border:2px solid #2f6fbe; border-radius:999px; overflow:hidden; }
+.meter i { display:block; height:100%; background:var(--green); }
+.meter.q i { background:var(--yellow); } .meter.r i { background:var(--red); }
+table.gt { width:100%; border-collapse:collapse; font-size:13.5px; }
+table.gt th { text-align:right; font-size:11px; text-transform:uppercase; color:#a8c4e8; padding:5px 4px; border-bottom:2px solid #2f6fbe; }
+table.gt th:first-child,table.gt td:first-child { text-align:left; }
+table.gt td { text-align:right; padding:5px 4px; border-bottom:1px solid #1c4d90; }
+table.gt tr.tot td { border-top:2px solid var(--yellow); border-bottom:0; font-weight:1000; font-size:15px; color:var(--yellow); }
+.pass { text-align:center; padding:26px 14px; }
+.pass .eyes { font-size:56px; }
+.pass .who { font-size:clamp(28px,6vw,46px); font-weight:1000; color:var(--yellow); margin:6px 0; }
+.scene { border:3px solid #1766c5; border-radius:20px; overflow:hidden; background:linear-gradient(#123f7d,#0a2547); }
+.scene svg { width:100%; height:auto; display:block; }
+.chip { display:inline-block; background:#0f60d2; border-radius:999px; padding:4px 12px; font-size:12.5px; font-weight:900; margin:0 6px 6px 0; }
+
+/* ===== OVERLAYS (Learn slides / Instructions / End) ===== */
+.overlay {
+  position:absolute; inset:0; z-index:50; display:grid; place-items:center;
+  background:linear-gradient(145deg,#061946ef,#0c3c7af2); backdrop-filter:blur(8px);
+}
+.card {
+  width:min(840px,94vw); padding:28px 32px; border-radius:30px; background:#fff; color:var(--ink);
+  text-align:center; box-shadow:0 25px 70px #000c; border:7px solid #2a6cc8;
+  max-height:92vh; overflow-y:auto;
+}
+.card img { width:min(260px,55vw); max-height:95px; object-fit:contain; }
+.card h1 { margin:4px 0; font-size:clamp(30px,5vw,52px); color:#0a3479; line-height:1; }
+.card h1 span { color:#ff8614; }
+.card h2 { margin:4px 0 6px; font-size:clamp(22px,3.6vw,32px); color:#0a3479; }
+.card p { font-size:16px; font-weight:700; }
+.card .subtitle { font-size:15.5px; font-weight:700; color:#3a4a63; margin-top:2px; }
+.step-tag { display:inline-block; background:#0a3479; color:#fff; font-weight:900; font-size:12px; padding:5px 14px; border-radius:999px; margin-bottom:6px; }
+.slide-tag { display:inline-block; background:#ff8418; color:#fff; font-weight:900; font-size:12px; padding:5px 14px; border-radius:999px; margin-bottom:8px; }
+.start {
+  border:none; border-radius:999px; padding:14px 34px; cursor:pointer; color:white;
+  font-size:21px; font-weight:1000; background:linear-gradient(135deg,#ff5f84,#ff8d25);
+  box-shadow:0 9px 0 #b92d49;
+}
+.start:active { transform:translateY(6px); box-shadow:0 3px 0 #b92d49; }
+.start.ghost { background:linear-gradient(135deg,#8aa9d6,#5578ab); box-shadow:0 9px 0 #34507e; }
+.start.blue { background:linear-gradient(135deg,#2f8bff,#0f52c8); box-shadow:0 9px 0 #0b3782; }
+.navRow { display:flex; justify-content:center; gap:14px; margin-top:16px; flex-wrap:wrap; }
+.dots { display:flex; justify-content:center; gap:8px; margin:14px 0 4px; }
+.dots span { width:10px; height:10px; border-radius:50%; background:#c9d6ea; display:inline-block; }
+.dots span.active { background:#0a3479; width:26px; border-radius:6px; }
+.slide { display:none; }
+.slide.active { display:block; }
+.mini-flow { display:flex; align-items:center; justify-content:center; gap:6px; margin:14px 0; flex-wrap:wrap; }
+.mini-step { width:120px; padding:12px 8px; border-radius:18px; color:#fff; box-shadow:0 6px 12px #0003; }
+.mini-step .icon { font-size:34px; display:block; }
+.mini-step b { display:block; font-size:14px; margin-top:3px; }
+.mini-step small { display:block; font-size:11px; opacity:.9; margin-top:2px; }
+.mini-arrow { font-size:22px; color:#0a3479; font-weight:1000; }
+.bullet-list { text-align:left; max-width:580px; margin:12px auto; font-size:15.5px; font-weight:700; color:#22314e; }
+.bullet-list div { margin:8px 0; }
+.instr-list { text-align:left; max-width:580px; margin:14px auto; font-size:16px; font-weight:700; color:#22314e; }
+.instr-list div { margin:8px 0; }
+.legend { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin:16px 0; font-size:13px; font-weight:900; }
+.legend div { padding:10px 4px; border-radius:12px; color:white; }
+.namerow { display:grid; grid-template-columns:1fr 1fr; gap:10px; max-width:560px; margin:12px auto 4px; text-align:left; }
+.namerow label { font-size:12px; font-weight:900; color:#3a4a63; display:block; margin-bottom:3px; }
+.namerow input { font:inherit; font-weight:900; width:100%; padding:10px 12px; border-radius:12px; border:3px solid #9db8dd; color:var(--ink); }
+.resultbadge { display:inline-block; margin:10px 0; padding:10px 20px; border-radius:999px; background:#fff0a8; border:3px solid #ffca28; font-weight:1000; }
+.back-link { color:#0a3479; font-weight:800; text-decoration:underline; cursor:pointer; }
+.float {
+  position:absolute; z-index:30; pointer-events:none; font-size:30px; font-weight:1000;
+  text-shadow:0 3px 0 #fff; animation:floatUp .9s ease forwards;
+}
+.combo-banner {
+  position:absolute; left:50%; top:44%; z-index:35; transform:translate(-50%,-50%) scale(0);
+  font-size:60px; font-weight:1000; color:white; text-shadow:0 6px 0 #051331; pointer-events:none;
+}
+.combo-banner.show { animation:comboPop .65s ease; }
+.confetti { position:absolute; top:-20px; width:12px; height:18px; z-index:60; pointer-events:none; animation:fall 2.8s linear forwards; }
+.hidden { display:none !important; }
+
+@keyframes floatUp { to { transform:translateY(-90px) scale(1.15); opacity:0; } }
+@keyframes comboPop { 0%{transform:translate(-50%,-50%) scale(.3)} 45%{transform:translate(-50%,-50%) scale(1.1)} 100%{transform:translate(-50%,-65%) scale(.9);opacity:0} }
+@keyframes fall { to { transform:translate(var(--drift),110vh) rotate(900deg); opacity:.1; } }
+@keyframes pop { from{transform:scale(.8);opacity:0} to{transform:scale(1);opacity:1} }
+.pop { animation:pop .3s ease both; }
+
+@media(max-width:900px) {
+  .topbar { grid-template-columns:190px 1fr 190px 230px; height:100px; padding:10px; }
+  .brand img { width:175px; } .soim strong{font-size:24px}
+  .status { grid-template-columns:170px 1fr; height:92px; padding:8px; }
+  .howto { display:none; } .main { top:192px; }
+  .scorebox strong{font-size:24px} .scorebox small{font-size:11px}
+}
+@media(max-width:640px) {
+  .topbar { grid-template-columns:130px 1fr 168px; height:86px; }
+  .soim { display:none; } .brand img{width:125px} .titlebox .small{font-size:15px} .titlebox .big{font-size:28px} .titlebox .tag{font-size:10px}
+  .circle{width:38px;height:38px;font-size:18px} .controls{gap:4px}
+  .status{grid-template-columns:112px 1fr;height:78px} .timerbox span{font-size:28px} .timerbox b{font-size:12px} .scorebox strong{font-size:19px}
+  .main{top:164px;left:8px;right:8px;bottom:8px}
+  .gcard{padding:12px} .vs .side strong{font-size:32px}
+}
+@media(prefers-reduced-motion:reduce){ *{animation:none!important;transition:none!important} }
+
+/* ===== ViTrox College logo — embedded, works with no network ===== */
+.brand { background:#fff; border-radius:16px; padding:9px 13px; box-shadow:0 6px 12px #0006; }
+.logo { background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAeAAAAC1BAMAAAB1zjFWAAAAHlBMVEUAAAAgLmUZI2odK2EcKmAAXFwAAP9oaGgAAAAAAAB1c6qpAAAACHRSTlMA+w9nngIBAqLUN54AABdgSURBVHja7V3fbxzHff/sLJd2AB25K6kPEaXl3FE0gjihllT80tYOmeQpBtiDAKcFihqEgb63aP+KPvW9QCCoSB9qJDifo77UVmQ7fWpJrSg7TS3yODyaSZroyCUt1LFOO9uH/Tk7s3d7Z5lHRfd9II67szPzne93vr9m5jsaoSgC/X7yM1uKMxjdOaviAlcPNoxu9LiGAaCFUYE2zEeEX+7Eg3IGDE8TaFd7vFxPfs2Z6dPO8u1PKinyhzzEfGWQZrdGNkqa1ePlYfyDal769EqbTWcKXTEbAFD1Bml2emR8MTHMR7NZ5O4dPlUsPVEDuDzatRxL644b/5plqLqZotwuRS3dPyUIrwMTFelxR8SBYWvuIPx5Zp3gSHhJzRzCur0hT5THXlzDaIFQSrj8eJ7WallFY/xg+1w4Y/cJJWLZzWY4JjEsndkgioawfeScBikNoH7k5h8HnqyKVlxAf0CZ8dgU33QAQDOTfw2fyxTWDujyjenRCy0tL4Ojx55EdjrhOX5gNoDLnkCqO8fdDML6mZfeBFb03Nd+cBtk9cPOqUAYsrXFC/oz+ah4bvT+MuSS08HSJcGoA90GALwmPA+fifCa9OTN3uN1snpYYU+rCLUeP1wvojAn0YduyvQ/zlT+KC73dJmjxTD5FNjSAEDPm/nnD5zrkumw7IXq+bLIEMH7XUTKXH8QPlr7RGaZWyEjaMteAY+cpGnZ2ZYGQtJUsDfwEAAMX+wu6QKADwBBLJbWC4VFsDFiwwMA9vfKCDMTxAeAbjuncdKf31zt1x5fpacAYQRyx6R+1U34r6tK03pqgrp9G2zcOwVSuqswBU0qSlLSnAYN57UtGCr6ZoKlvt8tETw4DRSW6QnTkZk8wrMt8PSCDQBEB8D/sn+DfNUZPYUTVLIuQe7RRBeExeyeIbF+KyPWygQBXA0AZaOlMBRSK8d6F2g6d9s7KUdczA5So0SLoYRcGy3CiomVf8JMLNQTiXbnrBOFAzYjQpeenj4/DXNYMbHyT1hGBrP69s+ss7Wa9cC1MxZIKY0z4kk8kZlYOalVb4gDk5XBDeo0AMCYyUxG2y3VZGNxlAhHfuv/HT2Xf/PbO4L9qD+HzzIK2Ptl7fyBQTteUs9zOk9klvOV30gy4bPk5/8+j+eZNyKEtZw7W+gvETrIakGtl/tF6B+Ou/SUeEtqEreUFC5iBUKzVOvJMISiVVjCqC5HUyqv4+aFtY3Ht4X+1TiLYhSpOnDB2YBrXiOzCwCAFr2I4K+/GIV1SVkIjtycGf2rGLAWAIOvbKWBubUPJQeb/zwN7+hOhxXUQ/deiWT94u2swiarjW9tA4DjwnEB6PZGRkXMmQrcDoEWqG4qETYCKRofe/Nh8ywMZBZFOI2gkolErr0FZalYF1YOC+oh2lTyfzaySVab384rPVJJ9KSitqTKRUE+6gmnyB6iTwXfcKG3rxtcZWUlLwkKlyxXX0l/H2d8lBTfxWkr4kX+cMb4AiwNOXY+67FkAk1HA14yhl11+5RS1yPymZUIOtqO8dUOABL/o5/5zg+LKaw74D9/lKMwIYWmpOAhakBIQLZrWcoV1snXBhjma2Caqp7uy0JMKW7fSPCFXQOxYxT8T38YciHbOTw8knjunXduPQLuWnPpGFQ7Wq8hT1e/NJN0UMAMQ1EYALDi5kroU6pPCE+pdP6+IG8WP+hmxEyu+mnjxVC1xfsVSIVNEtFrK2B3ShVz/Avqn1pNEtT1BbFIZPfaEwkq+n0AmbDKnRdTzSvFjrwXGwBIDVuRa1fZp48ShLtBDw+RUSw8YYR5qyWRvCnSyJ+J3O9KTh1nuvrJv6WCTXKMGmFDcbjhDOuyjD5XkJDGcpq4YHQAbIZ0AAMprgYAuJIjQtYG8f84IfFGXhf7TtTnUPxcYaIBo3BTk0CMBn1/EHOfDkd09TjpPVv+8GbChu38u3a2P+Q2FRF2FXGtWEpqCE5gxwLJYxZuLViQeCDLCf6fJCT+s6IKXwCACnIUVsSUteht9xKCEwjMyOZyHSB6H9a6d7MHT4eD8TFNZTjp1Z4WL2ubsE/AcbgE7Vh44DYAu1/LfKZezNON0Nhwod+ieSyJwricCUtdY/hSAhRuTlNjSi7T7tvycSOlqKT7AIDPAt+os7yuBb4n1fUgNC7JorA6Rr5T6AfFQkJejuS3pNqlNcbgZxCqfuCCaIIXzG9zYPJxttRh6tXRiby03AID1u4Bd07B5oMTBSpbUypXNw4qkLn7xRErVXyq3K6ReTjhfolwW4Dht8SqFxogNlH06DXfVYZmCK/JzdaQ3RislQi9kb/T/uFUk2/teo93t1mBvTwA9KdwQTyjDyu0ch+2ZFZpDdQ1AIzXhB5O9BY1DzwGoq3gnXzsRNDWkkBQRTzkztWPXKEuQriwR44AVDuUVTXBdM4tSmIjdDo/+rbFMJtZu8sizCxpp0LgAby6rp8IZwZcXMYMCGeLZfRhuttz/5N8pOrTI+ibXE1hhbLVCQdM72Rk+oLZuJkNeSyYjfpRmQ/TpV1f5fJ9w2yozStjT2lrrbF03fDLBRfdrI/3KxdNt1ScKiEIt2W/Rf+PBtQUVvgH/gwzbpzUxkiPARvnksiKtsXJoIE5MImn8bhbZLDz1+W6TIDEDuWXjjAF2luxeahPlbffM1jIsVWTFnoo12V+YOheAsHJAAM43oviMRfbDHo5rZldY9+gA7hka7LUIgTmE49n9YTV9+YALJ35hS1Er3qL6bV00OTQllOI8I/2VAPCnng8q5jAAJqr/3VoHb7LLjCAlLWLbvfg6YmbhQj7Cg/R1jFYPGto0MM1ed58Di3Uh97nI4cBZmgRwlzBu+ag8azhIZqJ/HMADQYk+xMG45O9njwtyiPFBjV26UTiWWq1OJS0LAjXKquknsq6P6GNRoqw2edPhqcpLUJYsfxAXFCMDIbhrX0ptHW8XGBLA8qFzK38A6evwecgX8SRQzzu+atS+OYJQJdezvPOjS/oDwtOKj/JEzm1L3zwOIfw5EWUdd17wuRa/skjRVTimjtkO38uzrLP/7FPfKnVg8K1EviK7f1PQxGtciRGa5yOcJA2ysZr/TkpVyTeItWTJor4El++rkaYYCX3JMC70udiAFsRl85FrgtK5c48kmOF6SyumYdr5FKIRzsQrP+KQuokdeek9MRj6dCJwtoRI0HaYxk7xamWx8PwQLmIhyDdV49cWbbxmVi05myZR/Ki6UhD9g2vTCmhzz91oa07heZl3nhzJR1zQuGdoqBAKfM5M6fpy9APjNuF5mU+B8C+tEGNjRJfY69S3rEEAOwd4eKBL8li34n2YOUpLG/1mBwlxn7Qb8pCXEinCyCbXBHLaxf5I/kWyMejpDD/qzJeR6a3ewyXbFXcg7AChPMbLUacnMEr4blkgn32AsgmU/mI8Q4XSenQo9+LEtD5pdTCV0SF8/ugT4mCUl/7XDgooH2uUAjbv3perkV7XiReuhzz6WdYCDwAn301L+6Of60UWmjn9DYbLYX9/qaglnaxvssQhmfk+DQpYukcIfZHizG3nX5F0m2+xk8ZyP2CuEe0H4Kgt9Qi3dFSGPsf9C3RSPr6ctp9Ke6BNlEjLEqtYMT49o8vaclhb3vCTXWWvKUn0NUIi/HRhVEjzG2JVGKfkxUZ0n4ZgPM3Igtn4EWl0MrZWoyyEWPczvtGOezbEU2JrbkA3NtKwoU8zVUUFmytIUPSa18uibNQifHle17oHcaEk3l6TklhYdoGXZVH3iuDFqEAbkwrfflWupldOV1rmHgkF9j30/MdGgfAdUknEb1LwuMwAaehKvVtaZf6jM9Z0daLGGGlt2IVu9/KEqpSk49ewwMxANApGAi6l+zQC0/apPmw9Acx59Zm3XxDUtos0lGGeLKHAWbd/hQWN/fPBVDygD4LAML+qlw4g0wXxHkmL0wkYzENhvmthMlno+0btbPbmXpaAECqplSXpaRw9mhJfvGfFEiQK4kDuthz0gfJ9pOJylVV+hIlmY1uUqv28G93/jUZqOQwVy4SRI671FJ3RBHA4VpytFb/XY4RNTyvrOY3fxG3+NWeLrvjxa+D53/9a5VW/Uwlt17476/F383/+KPLOzG+t+LsfLlIkPYQ5lfUHSE93S1+ShLZfWzfic/i7H5vJWaC6q364DpEaZsncU55kx1RH+9Oc+j1PsyZVliUMbUgGl9vzOUOoOtn2LWfxP/kVoiCjcKOaHhKYP4+sijr9pA5fbRCXaqmMNQH0P6zL+VCeOV6n3I9jo7XG6hZYSa6w8OWaErVWukJZ6OObqNfR54KyCT9gTHsziLtqUKZrDYpfwnrezMMYxjDGMYwhjGMYQxjGMMYxjCGMYxhDGN4VkHDH0R8rxw8k9k0NYBg8RlBNtgIESaVZ4W6HgfBKdipc5IwAXBiPSPI6gd49kADgBeWnw1kVWenxjCGMYxhDGMYwxjGMIYxjGEMYxjDGP5Q4I1sRiUSZmOK9ucKG8sJjf/AuJarw5gHkLlQvSbWKbU5ee0HgCFkfiIUIPPZOqm4r/2aWE/6X3YzManR6E/00RMbpvncP6Q2n3vYA0g96nAtxQ6kVgMM+oV6RQFcoyjayq4BwNoHZpqGm2ARHZbcsCSeJugsX598HC5UBAcsk4XX6M5V1wHd3oiShqx9YAYfRslZ3riLTv480Os3liou9Cvb8XNit6Mn6e17c2kdAICr6CQ5ZiDcEZUcuqi1amcrLvQrO63koxiilQeAah45jDs/OePhjz5GfZdpHgcVD8jMeiy9Emnp3WQXPuHxfShL74bXB1KL6UdRz/Up6QBU/e34Iqmq3RCf6Gfi85OoevpB9hSYhSuZnKIkMNOOufHAxx3BUjSWadQ9XnlAm4EnhxC/D5BMyjCnmHk2zu3HP+2kmY3vhP3fvwc/ukiF2iC5Q5ukGeOLnehH8sR/mElK0XNVRHHoaibpSEFKTxL/vRC/dsWLaNweDfL4UgnSTg+U3QmHqLsKtMOPHYrgVfHL1StJvXo0aukT/7g99Aze6+Smcx4m4nFMuLN9hIU0PzELZ0B8i10nFd3WOnAvupfB1jxgaUf3NdvFntEFAE4ZaQOA8fZU/j4D46cVQLc9aLYbHQbTGaDbB0SzXQR26VwLsciLOra26wJLO4Bmu2kdS146h6MZtWKdjfuiW5ZDgfqidTYV9pa1nPCEHt0MNWdZVqTB3rAsayl8a1lWeH8GmYhe16rW+Xw/VyzrXDj+l5cpANQXLetc+N2iZZ19I5rD1jnh9IplLWfV2ES+YuPvk45g7rwRf+RIFHYtwOgmctvLjG+Yxu0wviOCpeO6fbkT5e7Wb1SgbRgzbPICPqmgfQwAExcPcfwKA1orLhePaxvchX6mfW3qX2bvb22Fc3oa+pnmtZ9gvnt3GuSfS6vG6LBgeCDq1XVg8RYom5ztbqc65GzEB5wlx3gy4rDq6UddxFJaFo9Em8I0Q3jSNDysW99lsRg2ZqpuJJ3ru4x0AINPYZY2BFWpebjyflj5/H0gPNEaP6GaF39QzWgPhZQmlUQRRAM5lR5PTXJq5T4KS+7Bj3IH0NLJhrlNoRkA0GQg7bDOrmHCD29Pad4Df4ECNnRXwBcOhf5+1F6YduPVSwCLnrR340tWBoWqDVyKeb7gECNJpL8ZSlzHVJyDLwAvTNVDNOCbca4F9lYiHW3ggoMZms8AazRd8FWWs4/iIQO3neQeoMHg6xT6Zh9xF1bcDYBIiTddLJS07ZbjGcGBX8UPu6sONpsAwBco7t0kbRf5bCsEsBuiWnbhJ7lVJtlwadpI0wXvl3Y8sjfsqrt5gIhaZVXC9WqilPSdhCtcKxYMTVLhFH/a0F1Rmc9oHo4lC5cmhXaCCuxhkgBpJe5tj1mHxVykAU7JttZiQ8jMJihmXnKgkQMzXRfSBSpm/vIsXcsmg8vw20DAuahgeiHM4tuk7EsgzZIN3EaUCcYUc3jFApBzis02g51L9+JIcrF7SUi8H8S3hw3oJ9HEbOvL0qQ95YeZEE2v/KYe0wsIB9iRlLYt1LuGawa1Tp6j0ZzOl6fRFRopZ7gluxDZtt0GALboqeWt8dJLAIA3U4QRAKYHYPktcLvk6LaPAJsBBFljFAFghgj7GnCpw3N3uUw+FssDcHaFYa4fuWWl9JvisAVEJe5+9+8ShTmtuswEyI1pVVZtaSLUAGfjE8Cm0dWJKUV0nvzLqcVc2LnNQo9ln6SxGH0Xyb0qQEoJav9qxkpm1ZhzaqIqPnc1dZonUp1K2uGc9kqIBwa0yLdd/SM30chJHzLl9hcZ9I/yTh2X2qAQ87J7pWdVKyOKaIJOzuiIfYZpyhKEl9+DBoDPevp+txSFrSkXCy1WMLmjH29Ng6/9k6LEEDKpP7h4lA1yBC4vVks/2gNfBeoolQL/8PDwsOVCb5VQAuT6UJ0f4gKAZUR5nupTrVar1Wr3kNLwNcClzK265a901M+wYpszMTH8maHIWTJlSjQ7+QfdUE0qRzeOfW1lEOYEoCzn/feBix/1K7H0MyD0ESWd+WR4Wheu+irKXX/xHZnC4I67eWBwwDPLjes6kOZaMD1RSsdTeAqUaY2+tGMWtOx35e2s2B9uhVI6mqGfXhUSO53NSO0E4fpdaAY0wCtB4HcArLjRpZO5W5F8DbF1SjWP3KvEGb0EqSbSor4rjINzVDrLM+uKISzCATQAQDMzNieThBYagIbuJehlAmgUmGfJDdAcyDplGuAl0btv2vnrcMDl0KDrCQlFmu5Q7hLz4ttWr9VqNdrbeQDZgz9DzdItbbfTMKwjrHX4sdYx3nbBOIWe4xnbyV7WHimpTDpHEo7V4La0By3kk5+0WkUKhGQH3oSJiZIY81mg/YtYKGfowxMTvmqDsP0o7iE5coKxu5e5zjrkkWEoXCILZoowtwGz7abx6X6wQEF2EoRTtUkTZ/HrFEHd58AFkacdli0PhGmkzQJnsTwYe2K+nl7eUqgpNgdp6WZQ8WecBoA2qWSUrXMUXTMTxqN5fZfdE939RjWvnDkBWIJxtVvK3JMhyIYR+lEY8KBp0NtlFaTPEcctgmyQ/203Sivv29BZAzc98Etim21pUWDVyUjLR7R8WE3wqgPgXrs0wvt70PwBTrjwVQfaTSBMWJw0VLPj27k5BX8BwC5y91NzRcdYemUhabtDHpbjtH9Mi2TnkU8RTJSuvsnAw6DoKk2726JRulODuLC/HkX1DJGeFHwhMgZC1G7uAbVoDOxZYMYZBmHDA477jNWEMI+oW96whN6egm2ycDrj+MCYYYS+8nMX/NUGAMx6ofe4GSCgwv3FNy8Ce50aWpOz3TCy49NDbNpt2sJ8tz2NxO1MeT/2A8MVEExEqetpduXB351GYLfJ69dB6ndSaRR/lDt7WF+xMssw0tpS3DLRLSv8XbesswYATNaSJR09WXDCSlSBoWdWpqIOWJYV3W5CXgjrqgprS1FjVeuc8KFYkby2VF+0rPPRt5p1nkQfOWopDQ+DqQPX9ELSPeKmh53v7jCqHQBkvwuAII51dOvvYVMIYPD6XQ93vrsD4Oz2b0PJrU+Bf7D06XbVdpFZbNS+FQnvrZA6H4b3xATBLSHiEe0AaGpT8B8ueQjddeQiHskOgFgdeFHu19C87be2BCOoRCvvBGm+XEw7DQDGYxPnQ0ammoeHgtg1/DQBapT+NptpNElIWk3Hf5Y2sov5pCMemox3AGQTp0bLZYodAIlxCW4M4rLacR5ybr+f9jZMYf6qk2SrZ3vAi4JB0F09l69s/27CeOSWjSHBuOuUltIAB/gg+o+3KEiYUbTtx+vLi7dmAIA0GRbiZX8baIvB7ubWuZxU6trRpaUglbLOsuxoprUAuq2yM7MsbSzATyP3c5mdPbiavol3+YRl4p9GlyxtA1cPNsI9LYa/iE/jS0Cobgb3xKGMd/2ku3gmv99cqrjQ7YPsLp7kgw5DfkOOahfP5Pebi1MuoF853BCDItFH/w8JFFAuW85KCAAAAABJRU5ErkJggg==); background-repeat:no-repeat; background-position:center; background-size:contain; }
+.brand .logo { width:100%; height:60px; background-position:left center; }
+.card .logo { width:min(250px,54vw); height:74px; margin:2px auto 6px; }
+.hero .logo { width:min(240px,52vw); height:70px; margin:0 auto 4px; }
+@media(max-width:900px){ .brand { padding:7px 10px; } .brand .logo { height:48px; } }
+@media(max-width:640px){ .brand { padding:5px 8px; border-radius:12px; } .brand .logo { height:32px; } .card .logo { height:56px; } }
+</style>
+</head>
+<body>
+<div class="game" id="game">
+  <header class="topbar">
+    <div class="brand"><div class="logo" role="img" aria-label="ViTrox College"></div></div>
+    <div class="titlebox">
+      <div class="small">BOBA</div>
+      <div class="big">WARS 🧋</div>
+      <div class="tag">KNOW YOUR CUSTOMER, WIN THE STREET!</div>
+    </div>
+    <div class="soim"><strong>SoIM</strong><span>SCHOOL OF INDUSTRIAL MANAGEMENT<br>EXPERIENCE DAY</span></div>
+    <div class="controls">
+      <button class="circle" id="homeBtn" title="Back to workshop menu" aria-label="Back to workshop menu" onclick="if(confirm('Leave this game and go back to the workshop menu?'))location.href='index.html'">&#127968;</button>
+      <button class="circle" id="musicBtn" title="Music">♫</button>
+      <button class="circle" id="soundBtn" title="Sound">🔊</button>
+      <button class="circle" id="fullBtn" title="Full screen">⛶</button>
+    </div>
+  </header>
+
+  <section class="status" id="soloStatus">
+    <div class="timerbox" id="timerBox"><b>⏰ TIME LEFT</b><span id="timer">--:--</span></div>
+    <div class="scorebox">
+      <div class="one"><small id="n1lab">PLAYER 1</small><strong id="score1">0</strong></div>
+      <div class="combo"><small>STREAK</small><strong id="streak">x0</strong></div>
+      <div class="two"><small id="n2lab">PLAYER 2</small><strong id="score2">0</strong></div>
+      <div class="best"><small>HIGH SCORE</small><strong id="best">0</strong></div>
+    </div>
+    <div class="howto"><h3>HOW TO PLAY</h3>1. Set up in secret — pass the tablet when told<br>2. Most cups <b style="color:#ffd43b">wins the week</b>, most money wins the war<br>3. Clock runs out = worst option and <b style="color:#ff6670">−50</b></div>
+  </section>
+
+  <main class="main"><div class="panel" id="panel"></div></main>
+  <div class="combo-banner" id="comboBanner"></div>
+
+  <!-- ============ STEP 1: LEARN — 6 slides, facilitator-led (~5 min) ============ -->
+  <section class="overlay" id="learnScreen">
+    <div class="card">
+      <div class="logo" role="img" aria-label="ViTrox College"></div>
+
+      <div class="slide active" data-slide="1">
+        <span class="step-tag">STEP 1 OF 3 · LEARN</span> <span class="slide-tag">SLIDE 1 / 6</span>
+        <h1>What is <span>Marketing?</span></h1>
+        <p>Marketing is not just adverts. It is five decisions, made on purpose instead of by accident.</p>
+        <div class="mini-flow">
+          <div class="mini-step" style="background:#0d5da8"><span class="icon">👥</span><b>WHO</b><small>Your customer</small></div>
+          <div class="mini-arrow">➜</div>
+          <div class="mini-step" style="background:#368d25"><span class="icon">🧋</span><b>WHAT</b><small>The product</small></div>
+          <div class="mini-arrow">➜</div>
+          <div class="mini-step" style="background:#cf5b14"><span class="icon">💵</span><b>PRICE</b><small>How much</small></div>
+          <div class="mini-arrow">➜</div>
+          <div class="mini-step" style="background:#7c31ba"><span class="icon">📍</span><b>PLACE</b><small>Where to buy</small></div>
+          <div class="mini-arrow">➜</div>
+          <div class="mini-step" style="background:#b1245f"><span class="icon">📣</span><b>TELL</b><small>Promotion</small></div>
+        </div>
+        <div class="bullet-list">
+          <div>🎯 Businesses call these the <b>target market</b> and the <b>marketing mix</b>.</div>
+          <div>🧋 Today you will make all five decisions for a bubble tea shop, against a rival shop on the same street.</div>
+        </div>
+      </div>
+
+      <div class="slide" data-slide="2">
+        <span class="step-tag">STEP 1 OF 3 · LEARN</span> <span class="slide-tag">SLIDE 2 / 6</span>
+        <h2>Why You Cannot Sell to Everyone</h2>
+        <p>Different people want different things from the same drink.</p>
+        <div class="bullet-list">
+          <div>💸 A student wants the cheapest big cup. An office worker will pay double for real tea, but only near work.</div>
+          <div>🪧 One poster cannot say &ldquo;cheapest&rdquo; and &ldquo;most premium&rdquo; at the same time and be believed.</div>
+          <div>✂️ So you choose a <b>target market</b> — and choosing means deciding who you are <b>not</b> for.</div>
+        </div>
+      </div>
+
+      <div class="slide" data-slide="3">
+        <span class="step-tag">STEP 1 OF 3 · LEARN</span> <span class="slide-tag">SLIDE 3 / 6</span>
+        <h2>Meet the 4 Groups in Town</h2>
+        <div class="mini-flow">
+          <div class="mini-step" style="background:#0d5da8"><span class="icon">🎒</span><b>STUDENTS</b><small>Pay ~$4.50</small></div>
+          <div class="mini-step" style="background:#368d25"><span class="icon">💼</span><b>OFFICE</b><small>Pay ~$8</small></div>
+          <div class="mini-step" style="background:#cf5b14"><span class="icon">👨‍👩‍👧</span><b>FAMILIES</b><small>Pay ~$6</small></div>
+          <div class="mini-step" style="background:#7c31ba"><span class="icon">✨</span><b>TRENDY</b><small>Pay ~$10</small></div>
+        </div>
+        <div class="bullet-list">
+          <div>📱 Each group notices different things: short videos, posters, free tasters or a shoutout from a popular kid.</div>
+          <div>📍 Each group hangs around a different place. Being in the wrong street cannot be fixed by a better poster.</div>
+        </div>
+      </div>
+
+      <div class="slide" data-slide="4">
+        <span class="step-tag">STEP 1 OF 3 · LEARN</span> <span class="slide-tag">SLIDE 4 / 6</span>
+        <h2>The Promise and the Cup</h2>
+        <p>This is the big one, and it is where real brands go wrong.</p>
+        <div class="bullet-list">
+          <div>🚩 Your <b>poster</b> is a promise. It decides who walks in the first time.</div>
+          <div>🧋 Your <b>cup</b> is what you actually serve. It decides whether anybody comes back.</div>
+          <div>🤝 Promise more than you serve and you get one busy week, then an empty shop. Businesses call the gap a loss of <b>trust</b>.</div>
+        </div>
+      </div>
+
+      <div class="slide" data-slide="5">
+        <span class="step-tag">STEP 1 OF 3 · LEARN</span> <span class="slide-tag">SLIDE 5 / 6</span>
+        <h2>Careers &amp; Technology in Marketing</h2>
+        <div class="bullet-list">
+          <div>💼 <b>Careers:</b> brand management, social media and content, market research, retail buying, product management.</div>
+          <div>📡 <b>Technology:</b> ad managers, analytics dashboards, loyalty apps and review data show exactly which customers came back and which did not.</div>
+          <div>🎓 Every business needs someone who understands the customer better than the competition does.</div>
+        </div>
+      </div>
+
+      <div class="slide" data-slide="6">
+        <span class="step-tag">STEP 1 OF 3 · LEARN</span> <span class="slide-tag">SLIDE 6 / 6</span>
+        <h2>Ready to Open a Shop?</h2>
+        <p>Two shops, one town, four weeks, the same thirsty people.</p>
+        <div class="bullet-list">
+          <div>🙈 You set up in secret, then both shops appear on the same map.</div>
+          <div>⏱️ Every decision is on a clock, and the seconds you do not use become points.</div>
+        </div>
+        <p style="font-size:13px;color:#5b6b85;">👩‍🏫 Ask your SoIM student facilitator any questions before continuing!</p>
+      </div>
+
+      <div class="dots" id="learnDots"></div>
+      <div class="navRow">
+        <button class="start ghost" id="learnPrevBtn">← BACK</button>
+        <button class="start" id="learnNextBtn">NEXT ➜</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ STEP 2: INSTRUCTIONS ============ -->
+  <section class="overlay hidden" id="instructionScreen">
+    <div class="card">
+      <div class="logo" role="img" aria-label="ViTrox College"></div>
+      <span class="step-tag">STEP 2 OF 3 · HOW TO PLAY</span>
+      <h2>How to Play: Boba Wars</h2>
+      <p class="subtitle">$500 each and four weeks. Rent comes out every week.</p>
+
+      <div class="instr-list">
+        <div>1️⃣ <b>Who</b> — pick the group your shop is for (one, or two if you dare).</div>
+        <div>2️⃣ <b>What and how much</b> — set your price, your poster and what goes in the cup.</div>
+        <div>3️⃣ <b>Where and how</b> — choose your street, then spend 6 tokens on telling people.</div>
+        <div>4️⃣ <b>Four weeks</b> — three surprises hit the street. Answer before the clock ends.</div>
+        <div>5️⃣ ⏱️ Clock runs out = worst option and <b style="color:#c0392b">−50 points</b>.</div>
+      </div>
+
+      <div class="legend">
+        <div style="background:#0d5da8">🧋 Cup sold +3</div>
+        <div style="background:#368d25">🏆 Win a week +150</div>
+        <div style="background:#cf5b14">💵 Per $ profit +2</div>
+        <div style="background:#7c31ba">🤝 Trust 70%+ +200</div>
+      </div>
+
+      <div class="namerow">
+        <div><label for="n1">PLAYER 1 NAME</label><input type="text" id="n1" value="Player 1" maxlength="12"></div>
+        <div><label for="n2">PLAYER 2 NAME</label><input type="text" id="n2" value="Player 2" maxlength="12"></div>
+      </div>
+      <p class="subtitle" id="clockRow" style="margin-top:10px"></p>
+      <div class="navRow">
+        <button class="start" id="startBtn">2 PLAYERS ▶</button>
+        <button class="start blue" id="startCpuBtn">VS COACH 🤖</button>
+      </div>
+      <p><span class="back-link" id="backToLearnBtn">← Back to the marketing intro</span></p>
+    </div>
+  </section>
+
+  <!-- ============ STEP 3: RESULT ============ -->
+  <section class="overlay hidden" id="endScreen">
+    <div class="card">
+      <div class="logo" role="img" aria-label="ViTrox College"></div>
+      <h1>Four Weeks <span>Done!</span></h1>
+      <p id="resultText"></p>
+      <div class="resultbadge" id="rankText"></div>
+      <div id="resultDetail" style="margin-top:10px"></div>
+      <div class="navRow">
+        <button class="start" id="againBtn">PLAY AGAIN</button>
+        <button class="start ghost" id="reviewBtn">SEE THE NUMBERS</button>
+      </div>
+      <p><span class="back-link" id="newParticipantBtn">New participant? Start from the beginning</span></p>
+    </div>
+  </section>
+</div>
+
+<script>
+(() => {
+  const CASH=500, WEEKS=4, TOKENS=6, TOKCOST=20;
+  const Q=new URLSearchParams(location.search);
+  const T=Math.max(1,Math.min(120,parseInt(Q.get("time"),10)||22));
+  const BESTKEY="soimBobaWarsBest";
+
+  const WHO=[
+    {id:"stu",n:"Students",e:"🎒",hue:"#26c8ff",hair:"cap",price:4.5,fancy:.30,pot:150,
+     says:"Cheap, big cup, lots of pearls.",ch:{tiktok:.95,poster:.25,sample:.35,shout:.85}},
+    {id:"off",n:"Office workers",e:"💼",hue:"#8e4ee8",hair:"short",price:8,fancy:.70,pot:130,
+     says:"Real tea, quick, near work.",ch:{tiktok:.45,poster:.85,sample:.40,shout:.20}},
+    {id:"fam",n:"Families",e:"👨‍👩‍👧",hue:"#4ad16d",hair:"bun",price:6,fancy:.45,pot:120,
+     says:"Somewhere to sit, less sugar, fair price.",ch:{tiktok:.25,poster:.70,sample:.95,shout:.30}},
+    {id:"trd",n:"Trendsetters",e:"✨",hue:"#ffd43b",hair:"long",price:10,fancy:.95,pot:110,
+     says:"If it does not look amazing, no.",ch:{tiktok:1,poster:.25,sample:.30,shout:.90}}
+  ];
+  const SPOTS=[
+    {id:"school",n:"Outside school",e:"🏫",rent:40,crowd:{stu:130,off:10,fam:35,trd:45}},
+    {id:"mall",n:"In the mall",e:"🛍️",rent:110,crowd:{stu:60,off:55,fam:95,trd:85}},
+    {id:"office",n:"Office street",e:"🏢",rent:80,crowd:{stu:15,off:130,fam:20,trd:40}},
+    {id:"market",n:"Night market",e:"🌙",rent:60,crowd:{stu:70,off:30,fam:65,trd:115}}
+  ];
+  const BEST={};WHO.forEach(w=>BEST[w.id]=Math.max(...SPOTS.map(s=>s.crowd[w.id])));
+  const CH=[
+    {k:"tiktok",n:"Short videos",e:"📱"},{k:"poster",n:"Posters",e:"🪧"},
+    {k:"sample",n:"Free tasters",e:"🥤"},{k:"shout",n:"Popular-kid shoutout",e:"📣"}
+  ];
+  const TIER=[{n:"Powder mix",cost:1,q:.30},{n:"Real brewed tea",cost:2,q:.62},{n:"Premium leaves",cost:3.5,q:.92}];
+  const EVENTS=[
+    {e:"😳",t:"Your rival is telling everyone their tea is cheaper than yours.",
+     o:[{ic:"✂️",l:"Drop your price by $1",s:"Keep customers, keep less money",price:-1},
+        {ic:"🎥",l:"Post a video of your real ingredients ($30)",s:"Trust goes up, and trust brings people back",cost:30,trust:.10,seen:.12},
+        {ic:"🥤",l:"Free tasters all weekend ($40)",s:"Lots of new faces this week",cost:40,seen:.28},
+        {ic:"😴",l:"Ignore it",s:"Some of your customers drift to them",seen:-.10}]},
+    {e:"🤯",t:"A customer video hits 50,000 views. Both shops are in the comments.",
+     o:[{ic:"💬",l:"Repost and thank them by name",s:"Free, and your fans love it",seen:.22,fans:25},
+        {ic:"🎁",l:"$1 off for anyone who saw it",s:"More cups, thinner profit",price:-1,seen:.26},
+        {ic:"🙅",l:"Ignore it",s:"The moment passes to your rival",seen:-.06},
+        {ic:"💵",l:"Pay them $50 for another video",s:"Bigger reach, real money",cost:50,seen:.32,fans:15}]},
+    {e:"🌧️",t:"Rain and exam week. Far fewer people are out anywhere in town.",
+     o:[{ic:"🛵",l:"Deliver to classrooms and offices ($35)",s:"Keeps your regulars coming",cost:35,seen:.08,keep:.12},
+        {ic:"🧋",l:"Two-for-one study combo",s:"More cups, less money each",price:-1.5,seen:.10},
+        {ic:"☂️",l:"Save your money and wait",s:"Very quiet week",seen:-.22},
+        {ic:"🪧",l:"Posters inside school and offices ($25)",s:"Reaches people stuck indoors",cost:25,seen:.16}]},
+    {e:"🌟",t:"An influencer with 80,000 followers will post for $80. She offered your rival too.",
+     o:[{ic:"💸",l:"Pay the $80 first",s:"Huge reach if her followers are your people",cost:80,seen:.38,fans:30},
+        {ic:"🤝",l:"Offer free tea for a month instead",s:"No cash, costs you cups",cost:20,seen:.26,fans:18},
+        {ic:"🙋",l:"Spend $80 on your own tasters",s:"Smaller reach, you choose who tastes",cost:80,seen:.2,trust:.08},
+        {ic:"🚫",l:"Say no and keep the cash",s:"Safe. Also quiet",seen:0}]}
+  ];
+  const BOTS=[
+    {t:["stu"],price:4.5,claim:.32,tier:0,spot:"school",tok:{tiktok:3,poster:0,sample:0,shout:3},picks:[1,0,0,3]},
+    {t:["trd"],price:10,claim:.92,tier:2,spot:"market",tok:{tiktok:4,poster:0,sample:0,shout:2},picks:[1,0,3,0]},
+    {t:["off"],price:8,claim:.68,tier:1,spot:"office",tok:{tiktok:2,poster:4,sample:0,shout:0},picks:[2,0,0,1]},
+    {t:["fam"],price:6,claim:.46,tier:1,spot:"mall",tok:{tiktok:0,poster:3,sample:3,shout:0},picks:[1,0,0,2]}
+  ];
+  const RANKS=[[0,"Poster Helper"],[1200,"Brand Assistant"],[2200,"Marketing Executive"],[3200,"Brand Manager"],[4300,"SoIM Marketing Champion"]];
+
+  const game=document.getElementById("game"), panel=document.getElementById("panel");
+  const learnScreen=document.getElementById("learnScreen"), instructionScreen=document.getElementById("instructionScreen"), endScreen=document.getElementById("endScreen");
+  const comboBanner=document.getElementById("comboBanner"), timerBox=document.getElementById("timerBox");
+  let P=[], G={}, timer=null, audioCtx=null, musicTimer=null, musicOn=true, soundOn=true, beat=0;
+  let best=0; try{ best=Number(localStorage.getItem(BESTKEY)||0) }catch(e){}
+  document.getElementById("best").textContent=best;
+
+  /* ---- learn slides (house pattern) ---- */
+  const slides=Array.from(document.querySelectorAll("#learnScreen .slide"));
+  const learnDots=document.getElementById("learnDots");
+  slides.forEach((_,i)=>{const d=document.createElement("span");if(i===0)d.classList.add("active");learnDots.appendChild(d)});
+  let slideIdx=0;
+  function showSlide(i){
+    slides.forEach((s,idx)=>s.classList.toggle("active",idx===i));
+    Array.from(learnDots.children).forEach((d,idx)=>d.classList.toggle("active",idx===i));
+    document.getElementById("learnPrevBtn").style.visibility=i===0?"hidden":"visible";
+    document.getElementById("learnNextBtn").textContent=i===slides.length-1?"NEXT: HOW TO PLAY ➜":"NEXT ➜";
+    slideIdx=i;
+  }
+  document.getElementById("learnNextBtn").onclick=()=>{
+    if(slideIdx<slides.length-1)showSlide(slideIdx+1);
+    else{learnScreen.classList.add("hidden");instructionScreen.classList.remove("hidden")}
+  };
+  document.getElementById("learnPrevBtn").onclick=()=>{if(slideIdx>0)showSlide(slideIdx-1)};
+  document.getElementById("backToLearnBtn").onclick=()=>{instructionScreen.classList.add("hidden");learnScreen.classList.remove("hidden");showSlide(0)};
+  document.getElementById("newParticipantBtn").onclick=()=>{
+    endScreen.classList.add("hidden");instructionScreen.classList.add("hidden");learnScreen.classList.remove("hidden");showSlide(0);
+    document.getElementById("n1").value="Player 1";document.getElementById("n2").value="Player 2";panel.innerHTML="";
+  };
+  showSlide(0);
+  const clockRow=document.getElementById("clockRow");
+  clockRow.innerHTML="Clock speed: "+[[12,"Blitz"],[22,"Normal"],[40,"Chill"]].map(o=>
+    T===o[0]?"<b>"+o[1]+" "+o[0]+"s</b>":'<span class="back-link" data-clk="'+o[0]+'">'+o[1]+" "+o[0]+"s</span>").join(" · ");
+  clockRow.querySelectorAll("[data-clk]").forEach(s=>s.onclick=()=>{try{location.search="?time="+s.dataset.clk}catch(e){}});
+
+  /* ---- audio (house pattern) ---- */
+  function initAudio(){
+    if(!audioCtx){const C=window.AudioContext||window.webkitAudioContext;if(!C)return;audioCtx=new C()}
+    if(audioCtx&&audioCtx.state==="suspended")audioCtx.resume();
+  }
+  function tone(freq,dur=.08,type="sine",vol=.05,delay=0){
+    if(!soundOn&&!musicOn)return;initAudio();if(!audioCtx)return;
+    const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+    o.type=type;o.frequency.value=freq;g.gain.value=vol;
+    g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+delay+dur);
+    o.connect(g).connect(audioCtx.destination);
+    o.start(audioCtx.currentTime+delay);o.stop(audioCtx.currentTime+delay+dur);
+  }
+  function sfx(type){
+    if(!soundOn)return;
+    if(type==="select"){tone(350,.05,"square",.035);tone(520,.06,"triangle",.03,.04)}
+    if(type==="ok"){tone(560,.07,"triangle",.07);tone(820,.10,"triangle",.06,.06)}
+    if(type==="bad"){tone(170,.14,"sawtooth",.06);tone(110,.18,"square",.04,.07)}
+    if(type==="tick"){tone(900,.03,"square",.02)}
+  }
+  function musicStart(){
+    musicStop();if(!musicOn)return;initAudio();
+    const notes=[262,330,392,523,392,330,294,349];
+    musicTimer=setInterval(()=>{if(!musicOn||!G.running)return;tone(notes[beat%notes.length],.16,"triangle",.018);beat++},260);
+  }
+  function musicStop(){clearInterval(musicTimer);musicTimer=null}
+
+  /* ---- feedback (house pattern) ---- */
+  function floatText(text,good){
+    const el=document.createElement("div");el.className="float";el.textContent=text;
+    el.style.left=(window.innerWidth/2-70)+"px";el.style.top=(window.innerHeight*.30)+"px";
+    el.style.color=good?"#36d978":"#ff4d58";
+    game.appendChild(el);setTimeout(()=>el.remove(),950);
+  }
+  function showStreak(n){
+    if(n<2)return;
+    comboBanner.textContent=n+"x STREAK!";
+    comboBanner.classList.remove("show");void comboBanner.offsetWidth;comboBanner.classList.add("show");
+  }
+  function confetti(){
+    const colors=["#ffd43b","#26c8ff","#ff5f84","#4ad16d","#a968ff","#fff"];
+    for(let i=0;i<85;i++){const c=document.createElement("i");c.className="confetti";c.style.left=Math.random()*100+"%";
+      c.style.background=colors[Math.floor(Math.random()*colors.length)];c.style.setProperty("--drift",(Math.random()*340-170)+"px");
+      c.style.animationDelay=Math.random()*.6+"s";game.appendChild(c);setTimeout(()=>c.remove(),3500)}
+  }
+
+  /* ---- model ---- */
+  function mk(i,name,bot){
+    return {i,name,bot:!!bot,targets:[],price:6,claim:.5,tier:1,spot:null,
+      tok:{tiktok:0,poster:0,sample:0,shout:0},cash:CASH,cups:0,fans:0,
+      pts:0,bd:[],hist:[],base:{},got:{},seenAdj:0,priceAdj:0,trustAdj:0,keepAdj:0,timeouts:0,lastCups:0,streak:0,notes:[]};
+  }
+  const other=p=>P[1-p.i];
+  const tokUsed=p=>CH.reduce((a,c)=>a+p.tok[c.k],0);
+  const price=p=>Math.max(2,p.price+p.priceAdj);
+  const delivered=p=>TIER[p.tier].q;
+  const trust=p=>Math.max(.15,Math.min(1,1-Math.max(0,p.claim-delivered(p))*1.9+p.trustAdj));
+  const fitP=(p,w)=>Math.max(0,1-Math.abs(price(p)-w.price)/6);
+  const want=(p,w)=>fitP(p,w)*Math.max(0,1-Math.abs(p.claim-w.fancy)*1.7);
+  const keepFit=(p,w)=>fitP(p,w)*Math.max(0,1-Math.abs(delivered(p)-w.fancy)*1.7);
+  function seen(p,w){
+    let t=0;CH.forEach(c=>t+=p.tok[c.k]*w.ch[c.k]);
+    return Math.max(0,Math.min(.92,t*.13+p.seenAdj));
+  }
+  function locF(p,w){
+    if(!p.spot)return 0;
+    return SPOTS.find(s=>s.id===p.spot).crowd[w.id]/BEST[w.id];
+  }
+  const focus=(p,w)=>(p.targets.indexOf(w.id)>-1?1.25:.7)*(p.targets.length>1?.88:1);
+  const strength=(p,w)=>seen(p,w)*want(p,w)*locF(p,w)*focus(p,w);
+  const targeted=(p,w)=>p.targets.indexOf(w.id)>-1;
+  function award(p,n,why,quiet){
+    n=Math.round(n);p.pts+=n;p.bd.push({n,why});
+    if(!quiet&&n!==0)floatText((n>0?"+":"")+n+" "+why.toUpperCase(),n>0);
+    hud();
+  }
+
+  /* ---- shell wiring ---- */
+  function hud(){
+    if(P.length<2)return;
+    document.getElementById("n1lab").textContent=P[0].name.toUpperCase().slice(0,10);
+    document.getElementById("n2lab").textContent=P[1].name.toUpperCase().slice(0,10);
+    document.getElementById("score1").textContent=P[0].pts;
+    document.getElementById("score2").textContent=P[1].pts;
+    document.getElementById("streak").textContent="x"+Math.max(P[0].streak,P[1].streak);
+  }
+  function setTime(s){
+    document.getElementById("timer").textContent="00:"+String(Math.max(0,s)).padStart(2,"0");
+    timerBox.classList.toggle("hot",s<=5);
+  }
+  function stopClock(){if(timer){clearInterval(timer);timer=null}}
+  function pauseTime(){stopClock();document.getElementById("timer").textContent="--:--";timerBox.classList.remove("hot")}
+  function clock(secs,onEnd){
+    stopClock();
+    const el=document.getElementById("tb");
+    const total=secs*1000;let left=total,last=Date.now();G.left=secs;setTime(secs);
+    timer=setInterval(()=>{
+      const now=Date.now();left-=now-last;last=now;
+      const s=Math.max(0,Math.ceil(left/1000));
+      if(s!==G.left&&s<=5&&s>0)sfx("tick");
+      G.left=s;setTime(s);
+      if(el){el.style.width=Math.max(0,left/total*100)+"%";el.className=left/total<.25?"hot":(left/total<.5?"warn":"")}
+      if(left<=0){stopClock();sfx("bad");onEnd()}
+    },100);
+  }
+  const tbar=()=>'<div class="tbar"><i id="tb" style="width:100%"></i></div>';
+  function speedPts(p){const s=Math.max(0,G.left||0);if(s>0)award(p,s*3,"quick thinking",true)}
+  function timeoutPen(p,why){p.timeouts++;award(p,-50,"clock ran out");p.bd[p.bd.length-1].why="Ran out of time: "+why}
+  function render(h){panel.innerHTML=h;panel.scrollTop=0;hud()}
+  const bind=(sel,fn)=>Array.prototype.forEach.call(panel.querySelectorAll(sel),fn);
+
+  /* ---- pictures ---- */
+  function face(w,size){
+    const hair={
+      cap:'<path d="M8 24 Q37 2 66 24 Z"/><rect x="2" y="22" width="42" height="6" rx="3"/>',
+      short:'<path d="M9 26 Q37 2 65 26 Q52 18 37 18 Q22 18 9 26 Z"/>',
+      bun:'<circle cx="37" cy="6" r="8"/><path d="M10 24 Q37 4 64 24 Z"/>',
+      long:'<path d="M8 26 Q37 0 66 26 L66 56 Q56 34 37 34 Q18 34 8 56 Z"/>'
+    }[w.hair];
+    return '<svg viewBox="0 0 74 74" width="'+(size||58)+'" height="'+(size||58)+'" role="img" aria-label="'+w.n+'">'
+      +'<circle cx="37" cy="40" r="27" fill="#ffe0bd" stroke="#12233f" stroke-width="3"/>'
+      +'<g fill="'+w.hue+'" stroke="#12233f" stroke-width="3">'+hair+'</g>'
+      +'<circle cx="27" cy="36" r="3.3" fill="#12233f"/><circle cx="47" cy="36" r="3.3" fill="#12233f"/>'
+      +'<path d="M27 47 Q37 55 47 47" fill="none" stroke="#12233f" stroke-width="3.2" stroke-linecap="round"/></svg>';
+  }
+  function bobaArt(x,y,s,fill){
+    let p="";for(let i=0;i<6;i++)p+='<circle cx="'+(7+(i%3)*8)+'" cy="'+(34-Math.floor(i/3)*7)+'" r="3.2" fill="#3b2a22"/>';
+    return '<g transform="translate('+x+','+y+') scale('+s+')">'
+      +'<path d="M0 0 H30 L26 44 H4 Z" fill="'+(fill||"#e8c39e")+'" stroke="#12233f" stroke-width="3"/>'
+      +'<g transform="translate(0,4)">'+p+'</g>'
+      +'<rect x="-3" y="-8" width="36" height="9" rx="4" fill="#fff" stroke="#12233f" stroke-width="3"/>'
+      +'<path d="M19 -8 L27 -28" stroke="#ff6fa5" stroke-width="5" stroke-linecap="round"/></g>';
+  }
+  function twoShops(q1,q2){
+    const sh=(x,col,label,q)=>{
+      let g='<g transform="translate('+x+',0)">'
+        +'<rect x="14" y="66" width="160" height="96" rx="7" fill="#fff6ec" stroke="#12233f" stroke-width="3"/>'
+        +'<path d="M6 66 H182 L170 34 H18 Z" fill="'+col+'" stroke="#12233f" stroke-width="3"/>'
+        +'<path d="M52 66 L60 34 M98 66 L102 34 M144 66 L142 34" stroke="#fff6ec" stroke-width="11"/>'
+        +'<path d="M6 66 H182 L170 34 H18 Z" fill="none" stroke="#12233f" stroke-width="3"/>'
+        +'<rect x="26" y="80" width="98" height="30" rx="7" fill="#ffe7f0" stroke="#12233f" stroke-width="3"/>'
+        +'<text x="75" y="101" font-size="15" font-family="Arial" font-weight="bold" text-anchor="middle" fill="#12233f">'+label+'</text>'
+        +'<rect x="22" y="130" width="144" height="28" rx="5" fill="#e8c39e" stroke="#12233f" stroke-width="3"/>'
+        +bobaArt(132,78,.62);
+      for(let i=0;i<Math.min(4,q);i++){
+        g+='<g transform="translate('+(34+i*36)+',178)"><circle cx="0" cy="0" r="11" fill="#ffe0bd" stroke="#12233f" stroke-width="3"/>'
+          +'<path d="M-12 12 Q0 5 12 12 L12 30 H-12 Z" fill="'+WHO[i%4].hue+'" stroke="#12233f" stroke-width="3"/></g>';
+      }
+      return g+"</g>";
+    };
+    return '<div class="scene"><svg viewBox="0 0 420 220" role="img" aria-label="Two bubble tea shops facing off">'
+      +sh(6,"#0f66df",(P[0]?P[0].name:"P1").slice(0,8),q1)
+      +sh(226,"#ff4d58",(P[1]?P[1].name:"P2").slice(0,8),q2)
+      +'<rect x="0" y="202" width="420" height="18" fill="#c9b49f" stroke="#12233f" stroke-width="3"/></svg></div>';
+  }
+  function mapPic(p,showBoth){
+    const W=420,H=290,PD={l:44,r:14,t:16,b:38};
+    const X=v=>PD.l+v*(W-PD.l-PD.r), Y=v=>H-PD.b-v*(H-PD.t-PD.b);
+    let g='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Map of what customers want, cheap to pricey and basic to fancy">'
+      +'<rect x="'+PD.l+'" y="'+PD.t+'" width="'+(W-PD.l-PD.r)+'" height="'+(H-PD.t-PD.b)+'" fill="#0a2c5e" stroke="#2f6fbe" stroke-width="2"/>'
+      +'<line x1="'+PD.l+'" y1="'+Y(.5)+'" x2="'+(W-PD.r)+'" y2="'+Y(.5)+'" stroke="#1c4d90" stroke-width="2"/>'
+      +'<line x1="'+X(.5)+'" y1="'+PD.t+'" x2="'+X(.5)+'" y2="'+(H-PD.b)+'" stroke="#1c4d90" stroke-width="2"/>'
+      +'<text x="'+PD.l+'" y="'+(H-13)+'" font-size="12" font-family="Arial" font-weight="bold" fill="#a8c4e8">cheap</text>'
+      +'<text x="'+(W-PD.r)+'" y="'+(H-13)+'" font-size="12" font-family="Arial" font-weight="bold" text-anchor="end" fill="#a8c4e8">pricey</text>'
+      +'<text x="12" y="'+(H-PD.b)+'" font-size="12" font-family="Arial" font-weight="bold" fill="#a8c4e8" transform="rotate(-90 12 '+(H-PD.b)+')">basic</text>'
+      +'<text x="12" y="'+(PD.t+40)+'" font-size="12" font-family="Arial" font-weight="bold" fill="#a8c4e8" transform="rotate(-90 12 '+(PD.t+40)+')">fancy</text>';
+    WHO.forEach(w=>{
+      const on=p&&targeted(p,w),wx=X((w.price-2)/11),wy=Y(w.fancy);
+      g+='<circle cx="'+wx+'" cy="'+wy+'" r="'+(on?20:16)+'" fill="'+w.hue+'" fill-opacity="'+(on?.42:.16)+'" stroke="'+w.hue+'" stroke-width="'+(on?3:2)+'"'+(on?"":' stroke-dasharray="4 3"')+'/>'
+        +'<text x="'+wx+'" y="'+(wy+6)+'" font-size="16" text-anchor="middle">'+w.e+'</text>'
+        +'<text x="'+wx+'" y="'+(wy-23)+'" font-size="11" font-family="Arial" font-weight="bold" text-anchor="middle" fill="#fff">'+w.n+'</text>';
+    });
+    const flag=(pl,col)=>{
+      const px=Math.max(0,Math.min(1,(price(pl)-2)/11));
+      return '<line x1="'+X(px)+'" y1="'+Y(pl.claim)+'" x2="'+X(px)+'" y2="'+Y(delivered(pl))+'" stroke="'+col+'" stroke-width="3" stroke-dasharray="5 4"/>'
+        +bobaArt(X(px)-15,Y(delivered(pl))-16,.62)
+        +'<g transform="translate('+X(px)+','+Y(pl.claim)+')"><line x1="0" y1="6" x2="0" y2="-24" stroke="#fff" stroke-width="3"/>'
+        +'<path d="M0 -24 L24 -18 L0 -11 Z" fill="'+col+'" stroke="#fff" stroke-width="2"/></g>'
+        +'<text x="'+(X(px)+27)+'" y="'+(Y(pl.claim)-14)+'" font-size="11" font-family="Arial" font-weight="bold" fill="'+col+'">'+pl.name.slice(0,9)+'</text>';
+    };
+    if(showBoth)g+=flag(P[0],"#26c8ff")+flag(P[1],"#ff86ab");
+    else if(p)g+=flag(p,p.i===0?"#26c8ff":"#ff86ab");
+    return '<div class="scene" style="background:#061d43">'+g+'</svg></div>';
+  }
+  function meterRow(label,v,cls){
+    return '<div class="meterrow"><b>'+label+'</b><div class="meter '+(cls||"")+'"><i style="width:'+Math.max(0,Math.min(100,v))+'%"></i></div>'
+      +'<span style="min-width:38px;text-align:right;font-weight:900">'+Math.round(v)+'%</span></div>';
+  }
+
+  /* ---- flow ---- */
+  function startGame(cpu){
+    const n1=(document.getElementById("n1").value||"Player 1").slice(0,12);
+    const n2=cpu?"Coach 🤖":(document.getElementById("n2").value||"Player 2").slice(0,12);
+    P=[mk(0,n1,false),mk(1,n2,cpu)];
+    if(cpu){
+      const b=BOTS[Math.floor(Math.random()*BOTS.length)];
+      Object.assign(P[1],{targets:b.t.slice(),price:b.price,claim:b.claim,tier:b.tier,spot:b.spot,botPicks:b.picks});
+      CH.forEach(c=>P[1].tok[c.k]=b.tok[c.k]||0);
+    }
+    P.forEach(p=>WHO.forEach(w=>{p.base[w.id]=0;p.got[w.id]=0}));
+    G={week:0,running:true,evs:EVENTS.slice().sort(()=>Math.random()-.5).slice(0,WEEKS-1)};
+    if(cpu)award(P[1],120,"coach decides instantly",true);
+    learnScreen.classList.add("hidden");instructionScreen.classList.add("hidden");endScreen.classList.add("hidden");
+    initAudio();musicStart();hud();sfx("select");
+    whoPass(0);
+  }
+  function pass(p,label,next){
+    if(p.bot){next();return}
+    pauseTime();
+    render('<div class="gcard '+(p.i===0?"one":"two")+' pass"><div class="eyes">🙈</div>'
+      +'<div class="who">'+p.name+'</div><p class="dim">'+label+'</p>'
+      +'<button class="start" id="ready">I am '+p.name+' — start ⏱️</button></div>');
+    document.getElementById("ready").onclick=()=>{sfx("select");next()};
+  }
+  function whoPass(i){
+    if(i>1){whatPass(0);return}
+    if(P[i].bot){whoPass(i+1);return}
+    pass(P[i],"Secret step 1 of 3 · pick your people",()=>whoStep(i));
+  }
+  function whoStep(i){
+    const p=P[i];
+    render('<div class="gcard '+(i===0?"one":"two")+'"><h2>👥 '+p.name+' — who is your shop for?</h2>'+tbar()
+      +'<p class="dim">One group, or two if you dare — aiming at two makes you 12% less convincing to both.</p>'
+      +'<div class="crew">'+WHO.map(w=>
+        '<div class="mate" style="'+(targeted(p,w)?"border-color:var(--yellow)":"")+'">'+face(w)
+        +'<div class="nm">'+w.e+' '+w.n+'</div>'
+        +'<div class="stats">&ldquo;'+w.says+'&rdquo;</div>'
+        +'<div class="stats">Pays about <b>$'+w.price+'</b><br>'+w.pot+' of them in town<br>Notices '+CH.filter(c=>w.ch[c.k]>=.7).map(c=>c.e).join(" ")+'</div>'
+        +'<div class="jobs"><button data-w="'+w.id+'" class="'+(targeted(p,w)?"on":"")+'">'+(targeted(p,w)?"CHOSEN ✓":"CHOOSE")+'</button></div></div>').join("")+'</div>'
+      +'<p class="dim" id="msg" style="margin-top:8px"></p>'
+      +'<div class="navRow"><button class="start" id="next">NEXT ➜</button></div></div>');
+    bind("[data-w]",b=>b.onclick=()=>{
+      const id=b.dataset.w,k=p.targets.indexOf(id);
+      if(k>-1)p.targets.splice(k,1);else if(p.targets.length<2)p.targets.push(id);
+      sfx("select");whoStep(i);
+    });
+    document.getElementById("next").onclick=()=>{
+      if(!p.targets.length){document.getElementById("msg").innerHTML='<b style="color:var(--red)">Pick at least one group first.</b>';sfx("bad");return}
+      stopClock();speedPts(p);sfx("ok");whoPass(i+1);
+    };
+    clock(T+8,()=>{
+      if(!p.targets.length)p.targets=[WHO[Math.floor(Math.random()*4)].id];
+      timeoutPen(p,"picking people");whoPass(i+1);
+    });
+  }
+  function whatPass(i){
+    if(i>1){wherePass(0);return}
+    if(P[i].bot){whatPass(i+1);return}
+    pass(P[i],"Secret step 2 of 3 · price, poster and cup",()=>whatStep(i));
+  }
+  function whatStep(i){
+    const p=P[i];
+    render('<div class="gcard '+(i===0?"one":"two")+'"><h2>🧋 '+p.name+' — what and how much?</h2>'+tbar()
+      +'<div id="mapbox">'+mapPic(p,false)+'</div>'
+      +'<p class="dim" style="margin-top:8px">The flag is what your poster <b>promises</b>. The cup is what you actually <b>serve</b>. A big gap gets people in once and never again.</p>'
+      +'<div id="mets">'+mets(p)+'</div>'
+      +'<div class="sl" style="margin-top:12px"><label for="pr">💵 Price <i id="n_pr">$'+p.price+'</i></label>'
+      +'<input type="range" id="pr" min="3" max="12" step="0.5" value="'+p.price+'"></div>'
+      +'<div class="sl"><label for="cl">✨ How fancy it looks <i id="n_cl">'+Math.round(p.claim*100)+'%</i></label>'
+      +'<input type="range" id="cl" min="10" max="98" step="1" value="'+Math.round(p.claim*100)+'"></div>'
+      +TIER.map((t,k)=>'<button class="opt'+(p.tier===k?" sel":"")+'" data-t="'+k+'"><span class="ico">'+["🥄","🍵","🌿"][k]+'</span><span>'+t.n
+        +'<small>$'+t.cost+' a cup to make · delivers '+Math.round(t.q*100)+'%</small></span></button>').join("")
+      +'<div class="navRow"><button class="start" id="next">NEXT ➜</button></div></div>');
+    const sync=()=>{
+      document.getElementById("n_pr").textContent="$"+p.price;
+      document.getElementById("n_cl").textContent=Math.round(p.claim*100)+"%";
+      document.getElementById("mapbox").innerHTML=mapPic(p,false);
+      document.getElementById("mets").innerHTML=mets(p);
+    };
+    document.getElementById("pr").oninput=function(){p.price=+this.value;sync()};
+    document.getElementById("cl").oninput=function(){p.claim=+this.value/100;sync()};
+    bind("[data-t]",b=>b.onclick=()=>{p.tier=+b.dataset.t;sfx("select");whatStep(i)});
+    document.getElementById("next").onclick=()=>{stopClock();speedPts(p);sfx("ok");whatPass(i+1)};
+    clock(T+13,()=>{timeoutPen(p,"price and cup");whatPass(i+1)});
+  }
+  function mets(p){
+    let h='<div class="grid4"><div class="kpi"><small>You keep per cup</small><strong>$'+(price(p)-TIER[p.tier].cost).toFixed(1)+'</strong></div>'
+      +'<div class="kpi"><small>Trust</small><strong style="color:'+(trust(p)>.7?"var(--green)":trust(p)>.45?"var(--yellow)":"var(--red)")+'">'+Math.round(trust(p)*100)+'%</strong></div></div>'
+      +'<div style="margin-top:8px">';
+    p.targets.forEach(id=>{
+      const w=WHO.find(x=>x.id===id);
+      h+=meterRow(w.e+" want it",want(p,w)*100,want(p,w)>.6?"":"q");
+    });
+    return h+"</div>";
+  }
+  function wherePass(i){
+    if(i>1){G.week=0;runWeek();return}
+    if(P[i].bot){wherePass(i+1);return}
+    pass(P[i],"Secret step 3 of 3 · where and how you tell them",()=>whereStep(i));
+  }
+  function whereStep(i){
+    const p=P[i],left=TOKENS-tokUsed(p);
+    render('<div class="gcard '+(i===0?"one":"two")+'"><h2>📍📣 '+p.name+' — where and how?</h2>'+tbar()
+      +'<p class="dim">Rent is charged every week. Then spend '+TOKENS+' tokens ($'+TOKCOST+' each) on telling people.</p>'
+      +SPOTS.map(s=>{
+        const mine=p.targets.reduce((a,id)=>a+s.crowd[id],0);
+        return '<button class="opt'+(p.spot===s.id?" sel":"")+'" data-s="'+s.id+'"><span class="ico">'+s.e+'</span><span>'+s.n
+          +'<small>Rent $'+s.rent+' a week · <b>'+mine+'</b> of your people around here</small></span></button>'}).join("")
+      +'<p><span class="chip" style="background:var(--yellow);color:#12233f">🎟️ '+left+' TOKENS LEFT</span></p>'
+      +CH.map(c=>{
+        const who=WHO.filter(w=>w.ch[c.k]>=.7).map(w=>w.e).join(" ");
+        return '<div class="meterrow"><span style="font-size:22px">'+c.e+'</span>'
+          +'<b style="min-width:150px">'+c.n+'<br><span class="dim" style="font-size:11.5px">works on '+who+'</span></b>'
+          +'<div class="jobs"><button data-d="'+c.k+'" aria-label="less '+c.n+'">−</button>'
+          +'<span style="min-width:26px;text-align:center;font-weight:900;font-size:18px">'+p.tok[c.k]+'</span>'
+          +'<button data-i="'+c.k+'" aria-label="more '+c.n+'">+</button></div></div>'}).join("")
+      +'<div style="margin-top:8px">'+WHO.map(w=>meterRow(w.e+(targeted(p,w)?" ⭐":""),seen(p,w)*100,seen(p,w)>.5?"":"q")).join("")+'</div>'
+      +'<p class="dim" id="msg2"></p>'
+      +'<div class="navRow"><button class="start" id="next">OPEN THE SHOP 🎉</button></div></div>');
+    bind("[data-s]",b=>b.onclick=()=>{p.spot=b.dataset.s;sfx("select");whereStep(i)});
+    bind("[data-i]",b=>b.onclick=()=>{if(tokUsed(p)<TOKENS){p.tok[b.dataset.i]++;sfx("select");whereStep(i)}});
+    bind("[data-d]",b=>b.onclick=()=>{const k=b.dataset.d;if(p.tok[k]>0){p.tok[k]--;sfx("select");whereStep(i)}});
+    document.getElementById("next").onclick=()=>{
+      if(!p.spot){document.getElementById("msg2").innerHTML='<b style="color:var(--red)">Pick a place first.</b>';sfx("bad");return}
+      if(tokUsed(p)<TOKENS){document.getElementById("msg2").innerHTML='<b style="color:var(--red)">'+(TOKENS-tokUsed(p))+' tokens still to spend.</b>';sfx("bad");return}
+      stopClock();p.cash-=tokUsed(p)*TOKCOST;speedPts(p);sfx("ok");wherePass(i+1);
+    };
+    clock(T+13,()=>{
+      if(!p.spot)p.spot=SPOTS[0].id;
+      let guard=0;
+      while(tokUsed(p)<TOKENS&&guard++<20)p.tok[CH[guard%4].k]++;
+      p.cash-=tokUsed(p)*TOKCOST;timeoutPen(p,"place and message");wherePass(i+1);
+    });
+  }
+  function runWeek(){
+    P.forEach(p=>{
+      const spot=SPOTS.find(s=>s.id===p.spot);
+      let cups=0,neu=0,ret=0;const rows=[];
+      WHO.forEach(w=>{
+        const me=strength(p,w),them=strength(other(p),w);
+        const share=me/(me+them+.55);
+        const room=Math.max(0,1-p.got[w.id]/Math.max(1,w.pot));
+        const nu=w.pot*share*room*.55;
+        const keep=Math.max(.05,Math.min(.78,trust(p)*keepFit(p,w)*.70+p.keepAdj));
+        const back=Math.min(w.pot,p.base[w.id]*keep);
+        p.got[w.id]+=nu;p.base[w.id]=back+nu;
+        cups+=nu+back;neu+=nu;ret+=back;
+        rows.push({w,nu,back,keep,share});
+      });
+      const rev=cups*price(p),cost=cups*TIER[p.tier].cost+spot.rent;
+      p.cash+=rev-cost;p.cups+=cups;p.fans+=neu*trust(p)*.5;p.lastCups=cups;
+      p.hist.push({w:G.week+1,cups,rev,cost,profit:rev-cost,neu,ret,rows});
+      award(p,cups*3,"cups sold",true);
+    });
+    const a=P[0].lastCups,b=P[1].lastCups;
+    if(a>b+.5){P[0].streak++;P[1].streak=0;award(P[0],150+50*(P[0].streak-1),"won week "+(G.week+1),true);showStreak(P[0].streak)}
+    else if(b>a+.5){P[1].streak++;P[0].streak=0;award(P[1],150+50*(P[1].streak-1),"won week "+(G.week+1),true);showStreak(P[1].streak)}
+    else P.forEach(p=>{p.streak=0;award(p,80,"drew week "+(G.week+1),true)});
+    G.week++;weekReport();
+  }
+  function weekReport(){
+    const a=P[0],b=P[1],w=a.lastCups>b.lastCups+.5?0:(b.lastCups>a.lastCups+.5?1:-1);
+    pauseTime();sfx("ok");
+    render('<div class="gcard pop"><h2>📊 End of week '+G.week+' of '+WEEKS+'</h2>'
+      +'<div class="vs"><div class="side one'+(w===0?" won":"")+'"><b>'+(w===0?"👑 ":"")+a.name+'</b><strong>'+Math.round(a.lastCups)+'</strong><small>cups this week</small></div>'
+      +'<div class="mid">VS</div>'
+      +'<div class="side two'+(w===1?" won":"")+'"><b>'+(w===1?"👑 ":"")+b.name+'</b><strong>'+Math.round(b.lastCups)+'</strong><small>cups this week</small></div></div>'
+      +'<h3>The battle map — both shops revealed</h3>'+mapPic(null,true)
+      +'<div class="grid2" style="margin-top:12px">'+P.map((p,i)=>{
+        const h=p.hist[p.hist.length-1];
+        return '<div class="kpi '+(i===0?"":"")+'" style="text-align:left"><small>'+p.name+'</small>'
+          +'<div style="font-size:13px;margin:4px 0">$'+Math.round(p.cash)+' in the bank · this week '
+          +(h.profit<0?'<b style="color:var(--red)">−$'+Math.abs(Math.round(h.profit))+'</b>':'<b style="color:var(--green)">$'+Math.round(h.profit)+'</b>')
+          +' · '+Math.round(h.ret)+' came back</div>'
+          +meterRow("trust",trust(p)*100,trust(p)>.7?"":trust(p)>.45?"q":"r")
+          +'<table class="gt" style="margin-top:4px"><tr><th>Group</th><th>New</th><th>Back</th><th>Share</th></tr>'
+          +h.rows.map(r=>'<tr><td>'+r.w.e+'</td><td>'+r.nu.toFixed(0)+'</td><td>'+r.back.toFixed(0)+'</td><td>'+Math.round(r.share*100)+'%</td></tr>').join("")
+          +'</table></div>'}).join("")+'</div>'
+      +'<div class="navRow"><button class="start" id="next">'+(G.week<WEEKS?"WEEK "+(G.week+1)+" SURPRISE ➜":"FINAL SCORES 🏆")+'</button></div></div>');
+    document.getElementById("next").onclick=()=>{sfx("select");G.week<WEEKS?evPass(0):results()};
+  }
+  function applyEv(p,o){
+    if(o.cost)p.cash-=o.cost;
+    if(o.price)p.priceAdj+=o.price;
+    if(o.seen)p.seenAdj+=o.seen;
+    if(o.trust)p.trustAdj+=o.trust;
+    if(o.keep)p.keepAdj+=o.keep;
+    if(o.fans)p.fans+=o.fans;
+    p.notes.push(o.l);
+  }
+  function evPass(i){
+    if(i>1){runWeek();return}
+    if(P[i].bot){applyEv(P[i],G.evs[G.week-1].o[(P[i].botPicks&&P[i].botPicks[G.week-1])||0]);award(P[i],55,"coach answers instantly",true);evPass(i+1);return}
+    pass(P[i],"Week "+G.week+" · your move",()=>evAsk(i));
+  }
+  function evAsk(i){
+    const p=P[i],e=G.evs[G.week-1];
+    render('<div class="gcard '+(i===0?"one":"two")+'"><h2>Week '+G.week+' — '+p.name+'</h2>'+tbar()
+      +'<p style="font-size:17px"><b style="color:var(--yellow)">Surprise '+e.e+'</b><br>'+e.t+'</p>'
+      +e.o.map((o,k)=>{const locked=o.cost&&o.cost>p.cash;
+        return '<button class="opt" data-k="'+k+'"'+(locked?" disabled":"")+'><span class="ico">'+o.ic+'</span><span>'+o.l
+          +'<small>'+(locked?"You cannot afford $"+o.cost:o.s)+'</small></span></button>'}).join("")
+      +'<p class="dim" style="margin:6px 0 0">Every second left on the clock is 3 points.</p></div>');
+    bind("[data-k]",b=>b.onclick=()=>{
+      stopClock();applyEv(p,e.o[+b.dataset.k]);speedPts(p);sfx("select");evPass(i+1);
+    });
+    clock(T,()=>{applyEv(p,{seen:-.12});timeoutPen(p,"week "+G.week);evPass(i+1)});
+  }
+  function rankFor(pts){let r=RANKS[0][1];RANKS.forEach(x=>{if(pts>=x[0])r=x[1]});return r}
+  function results(){
+    G.running=false;pauseTime();musicStop();
+    P.forEach(p=>{
+      const last=p.hist[p.hist.length-1];
+      p.loyal=last.ret/Math.max(1,last.cups);
+      p.profit=Math.round(p.cash-CASH);
+      award(p,p.profit*2,"profit $"+p.profit,true);
+      if(trust(p)>=.7)award(p,200,"trust "+Math.round(trust(p)*100)+"%",true);
+      if(p.loyal>=.35)award(p,150,"regulars "+Math.round(p.loyal*100)+"% of cups",true);
+    });
+    if(P[0].fans>P[1].fans)award(P[0],100,"most fans in town",true);
+    else if(P[1].fans>P[0].fans)award(P[1],100,"most fans in town",true);
+    const w=P[0].pts===P[1].pts?-1:(P[0].pts>P[1].pts?0:1);
+    const top=Math.max(P[0].pts,P[1].pts);
+    if(top>best){best=top;try{localStorage.setItem(BESTKEY,best)}catch(e){}}
+    document.getElementById("best").textContent=best;
+    document.getElementById("resultText").innerHTML=w<0
+      ? "Dead heat! Both shops scored <b>"+P[0].pts+"</b> points."
+      : "<b>"+P[w].name+"</b> wins with <b>"+P[w].pts+"</b> points to "+P[1-w].pts+".";
+    document.getElementById("rankText").textContent="🏅 "+rankFor(top)+(w<0?"":" — "+P[w].name);
+    document.getElementById("resultDetail").innerHTML=
+      '<p class="subtitle">'+P.map(p=>p.name+": "+Math.round(p.cups)+" cups · $"+p.profit+" profit · "+Math.round(p.fans)+" fans · "+p.pts+" pts").join("<br>")+"</p>"
+      +'<p class="subtitle">High score on this tablet: '+best+"</p>";
+    endScreen.classList.remove("hidden");confetti();sfx("ok");
+    review();
+  }
+  function review(){
+    const w=P[0].pts===P[1].pts?-1:(P[0].pts>P[1].pts?0:1);
+    const rows=p=>{
+      const m={},order=[];
+      p.bd.forEach(x=>{if(!(x.why in m)){m[x.why]=0;order.push(x.why)}m[x.why]+=x.n});
+      return order.map(k=>'<tr><td>'+k+'</td><td style="color:'+(m[k]<0?"var(--red)":"#fff")+'">'+(m[k]>0?"+":"")+m[k]+'</td></tr>').join("")
+        +'<tr class="tot"><td>TOTAL</td><td>'+p.pts+'</td></tr>';
+    };
+    render('<div class="gcard"><h2>'+(w<0?"🤝 Dead heat":"🏆 "+P[w].name+" wins")+'</h2>'
+      +twoShops(w===0?4:1,w===1?4:1)+'</div>'
+      +'<div class="gcard"><h3 style="margin-top:0">Where you both ended up</h3>'+mapPic(null,true)+'</div>'
+      +'<div class="grid2">'+P.map((p,i)=>
+        '<div class="gcard '+(i===0?"one":"two")+'"><h3 style="margin-top:0">'+(w===i?"👑 ":"")+p.name+' — '+p.pts+' pts</h3>'
+        +'<div class="grid4" style="margin-bottom:8px">'
+        +'<div class="kpi"><small>Cups</small><strong>'+Math.round(p.cups)+'</strong></div>'
+        +'<div class="kpi"><small>Profit</small><strong style="font-size:19px;color:'+(p.profit>=0?"var(--green)":"var(--red)")+'">$'+p.profit+'</strong></div>'
+        +'<div class="kpi"><small>Fans</small><strong>'+Math.round(p.fans)+'</strong></div>'
+        +'<div class="kpi"><small>Trust</small><strong>'+Math.round(trust(p)*100)+'%</strong></div></div>'
+        +'<table class="gt">'+rows(p)+'</table></div>').join("")+'</div>'
+      +'<div class="gcard"><h3 style="margin-top:0">Why it went that way 📋</h3>'
+      +P.map(p=>{
+        const tg=p.targets.map(id=>WHO.find(x=>x.id===id));
+        const spot=SPOTS.find(s=>s.id===p.spot);
+        const last=p.hist[p.hist.length-1];
+        const bestG=last.rows.slice().sort((x,y)=>(y.nu+y.back)-(x.nu+x.back))[0];
+        const fading=p.hist.length>1&&last.cups<p.hist[0].cups;
+        return '<p><b style="color:var(--yellow)">'+p.name+'.</b> Aimed at '+tg.map(x=>x.n.toLowerCase()).join(" and ")
+          +', set up '+spot.n.toLowerCase()+', promised '+Math.round(p.claim*100)+'% fancy at $'+price(p).toFixed(0)
+          +' and served '+Math.round(delivered(p)*100)+'%. '
+          +(!targeted(p,bestG.w)?"Most cups actually went to "+bestG.w.n.toLowerCase()+", not the group you planned for. ":"")
+          +(trust(p)<.5?"Trust of "+Math.round(trust(p)*100)+"% meant almost nobody came back. ":"")
+          +(fading?"Every week was worse than the first — that is what running out of new people to disappoint looks like. ":"")
+          +(p.timeouts?"The clock beat you "+p.timeouts+" time(s), costing "+(p.timeouts*50)+" points. ":"")
+          +'</p>'}).join("")
+      +'<p class="dim">Every group in town was split between you: '
+      +WHO.map(w=>{
+        const s1=strength(P[0],w),s2=strength(P[1],w);
+        return w.e+" "+w.n+" → <b>"+(s1>s2?P[0].name:(s2>s1?P[1].name:"nobody"))+"</b>";
+      }).join(" · ")+'.</p>'
+      +'<h3>The five decisions you both made 🎓</h3>'
+      +'<p class="dim"><b>1 Target market</b> — who it is for. <b>2 Positioning</b> — where you sit on the map next to your rival. '
+      +'<b>3 Price</b> — a number that also says how good you are. <b>4 Place</b> — being where your people already are. '
+      +'<b>5 Promotion</b> — telling them the way they listen.</p>'
+      +'<h3>Talk about it 💬</h3>'
+      +'<p class="dim">1. Did you both chase the same group? What did that do to your share?<br>'
+      +'2. Who promised more than they served, and when did the cups start dropping?<br>'
+      +'3. Was it better to copy your rival or go where they were not?</p></div>');
+  }
+
+  /* ---- controls ---- */
+  document.getElementById("startBtn").onclick=()=>startGame(false);
+  document.getElementById("startCpuBtn").onclick=()=>startGame(true);
+  document.getElementById("againBtn").onclick=()=>{endScreen.classList.add("hidden");instructionScreen.classList.remove("hidden")};
+  document.getElementById("reviewBtn").onclick=()=>{endScreen.classList.add("hidden");review()};
+  document.getElementById("musicBtn").onclick=function(){musicOn=!musicOn;this.textContent=musicOn?"♫":"♩";if(musicOn&&G.running)musicStart();else musicStop()};
+  document.getElementById("soundBtn").onclick=function(){soundOn=!soundOn;this.textContent=soundOn?"🔊":"🔇"};
+  document.getElementById("fullBtn").onclick=()=>{if(!document.fullscreenElement)document.documentElement.requestFullscreen?.();else document.exitFullscreen?.()};
+  pauseTime();
+})();
+</script>
+</body>
+</html>
